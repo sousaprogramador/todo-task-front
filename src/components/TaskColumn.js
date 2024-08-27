@@ -2,7 +2,7 @@ import React from 'react';
 import { Droppable } from 'react-beautiful-dnd';
 import Task from './Task';
 
-function TaskColumn({ status, tasks, onStatusChange }) {
+function TaskColumn({ status, tasks }) {
   const columnTitles = {
     pending: 'Pendentes',
     'in-progress': 'Em Progresso',
@@ -20,7 +20,7 @@ function TaskColumn({ status, tasks, onStatusChange }) {
         >
           <h2 className='text-xl font-semibold mb-4'>{columnTitles[status]}</h2>
           {tasks.map((task, index) => (
-            <Task key={index} task={task} index={index} />
+            <Task key={`${task.text}-${index}`} task={task} index={index} />
           ))}
           {provided.placeholder}
         </div>

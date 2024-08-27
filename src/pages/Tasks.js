@@ -10,12 +10,6 @@ function Tasks() {
     setTasks([...tasks, { text, status }]);
   };
 
-  const handleStatusChange = (index, newStatus) => {
-    const updatedTasks = [...tasks];
-    updatedTasks[index].status = newStatus;
-    setTasks(updatedTasks);
-  };
-
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
 
@@ -24,21 +18,13 @@ function Tasks() {
     const sourceStatus = source.droppableId;
     const destinationStatus = destination.droppableId;
 
-    const [sourceStatusKey] = sourceStatus.split('-');
-    const [destinationStatusKey] = destinationStatus.split('-');
+    const updatedTasks = tasks.map((task) => {
+      if (`${task.status}-${tasks.indexOf(task)}` === draggableId) {
+        return { ...task, status: destinationStatus };
+      }
+      return task;
+    });
 
-    const draggedTaskIndex = tasks.findIndex(
-      (task) => `${task.status}-${tasks.indexOf(task)}` === draggableId
-    );
-    const draggedTask = tasks[draggedTaskIndex];
-
-    const updatedTasks = tasks.filter((task) => task !== draggedTask);
-
-    if (sourceStatusKey !== destinationStatusKey) {
-      draggedTask.status = destinationStatusKey;
-    }
-
-    updatedTasks.splice(destination.index, 0, draggedTask);
     setTasks(updatedTasks);
   };
 
@@ -48,29 +34,30 @@ function Tasks() {
   }, {});
 
   return (
-    <div className='min-h-screen bg-gray-100 p-6'>
-      <h1 className='text-3xl font-bold mb-6 text-gray-900'>
-        Lista de Tarefas
-      </h1>
-      <div className='max-w-7xl mx-auto'>
-        <div className='w-full mb-6'>
-          <TaskForm onAddTask={handleAddTask} />
-        </div>
-        <div className='flex gap-6 overflow-x-auto'>
+    <div className='flex flex-col min-h-screen'>
+      <main className='flex-grow p-6'>
+        <h1 className='text-3xl font-bold mb-6 text-gray-900'>
+          Lista de Tarefas
+        </h1>
+        <div className='max-w-7xl mx-auto'>
+          <div className='w-full mb-6'>
+            <TaskForm onAddTask={handleAddTask} />
+          </div>
           <DragDropContext onDragEnd={onDragEnd}>
-            {['pending', 'in-progress', 'completed', 'cancelled'].map(
-              (statusKey) => (
-                <TaskColumn
-                  key={statusKey}
-                  status={statusKey}
-                  tasks={groupedTasks[statusKey] || []}
-                  onStatusChange={handleStatusChange}
-                />
-              )
-            )}
+            <div className='flex gap-6 overflow-x-auto'>
+              {['pending', 'in-progress', 'completed', 'cancelled'].map(
+                (statusKey) => (
+                  <TaskColumn
+                    key={statusKey}
+                    status={statusKey}
+                    tasks={groupedTasks[statusKey] || []}
+                  />
+                )
+              )}
+            </div>
           </DragDropContext>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
