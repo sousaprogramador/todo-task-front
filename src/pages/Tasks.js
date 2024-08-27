@@ -16,7 +16,7 @@ function Tasks() {
   const [tasks, setTasks] = useState(initialTasks);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-  const [creatingTask, setCreatingTask] = useState(false);
+  const [currentColumn, setCurrentColumn] = useState(null);
 
   const handleDragEnd = (result) => {
     const { source, destination } = result;
@@ -37,34 +37,40 @@ function Tasks() {
     });
   };
 
-  const handleOpenModal = (task = null) => {
+  const handleOpenModal = (task = null, columnId = null) => {
     if (task) {
       setEditingTask(task);
     } else {
-      setCreatingTask(true);
+      setEditingTask(null);
     }
+    setCurrentColumn(columnId);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setEditingTask(null);
-    setCreatingTask(false);
+    setCurrentColumn(null);
     setIsModalOpen(false);
   };
 
-  const handleSave = (newTask) => {
+  const handleSave = (newTaskContent) => {
     if (editingTask) {
       const updatedTasks = {
         ...tasks,
-        [editingTask.columnId]: tasks[editingTask.columnId].map((task) =>
-          task.id === editingTask.id ? { ...task, content: newTask } : task
+        [currentColumn]: tasks[currentColumn].map((task) =>
+          task.id === editingTask.id
+            ? { ...task, content: newTaskContent }
+            : task
         ),
       };
       setTasks(updatedTasks);
-    } else if (creatingTask) {
+    } else if (currentColumn) {
       const updatedTasks = {
         ...tasks,
-        pending: [...tasks.pending, { id: `${Date.now()}`, content: newTask }],
+        [currentColumn]: [
+          ...tasks[currentColumn],
+          { id: `${Date.now()}`, content: newTaskContent },
+        ],
       };
       setTasks(updatedTasks);
     }
@@ -81,13 +87,6 @@ function Tasks() {
 
   return (
     <div className='flex flex-col space-y-4'>
-      <button
-        onClick={() => handleOpenModal()}
-        className='bg-blue-500 text-white px-4 py-2 rounded mb-4'
-      >
-        Adicionar Nova Tarefa
-      </button>
-
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className='flex space-x-4'>
           {Object.keys(tasks).map((colId) => (
@@ -96,7 +95,8 @@ function Tasks() {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className='bg-gray-100 p-4 rounded w-1/4'
+                  className='bg-gray-100 p-4 rounded w-1/4 cursor-pointer'
+                  onClick={() => handleOpenModal(null, colId)}
                 >
                   <h2 className='text-lg font-semibold mb-2 capitalize'>
                     {colId}
@@ -117,9 +117,7 @@ function Tasks() {
                           <p className='text-sm'>{task.content}</p>
                           <div className='mt-2 flex justify-between'>
                             <button
-                              onClick={() =>
-                                handleOpenModal({ ...task, columnId: colId })
-                              }
+                              onClick={() => handleOpenModal(task, colId)}
                               className='text-blue-500'
                             >
                               Editar
