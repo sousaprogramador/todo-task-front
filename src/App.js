@@ -1,30 +1,48 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import Tasks from './pages/Tasks'; // Página de tarefas
 import { TaskProvider } from './context/TaskContext';
+import { AuthProvider } from './context/AuthContext';
+
+function AppLayout({ children }) {
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+
+  return (
+    <div className='flex flex-col min-h-screen'>
+      {!isLoginPage && <Header />}
+      <main className='flex-grow'>{children}</main>
+      {!isLoginPage && <Footer />}
+    </div>
+  );
+}
 
 function App() {
   return (
     <Router>
-      <TaskProvider>
-        <div className='flex flex-col min-h-screen'>
-          <Header />
-          <main className='flex-grow'>
+      <AuthProvider>
+        <TaskProvider>
+          <AppLayout>
             <Routes>
-              <Route path='/' element={<Tasks />} />
+              <Route path='/' element={<PrivateRoute element={Tasks} />} />
               <Route path='/login' element={<Login />} />
               <Route path='/register' element={<Register />} />
               <Route path='/forgot-password' element={<ForgotPassword />} />
             </Routes>
-          </main>
-          <Footer />
-        </div>
-      </TaskProvider>
+          </AppLayout>
+        </TaskProvider>
+      </AuthProvider>
     </Router>
   );
 }
