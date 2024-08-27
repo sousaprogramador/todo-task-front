@@ -1,186 +1,104 @@
-import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import React from 'react';
+import { useTasks } from '../context/TaskContext';
 import TaskModal from '../components/TaskModal';
-
-const tarefasIniciais = {
-  pendente: [
-    {
-      id: '1',
-      title: 'Tarefa 1',
-      description: 'Descrição da Tarefa 1',
-      image: 'https://via.placeholder.com/150',
-      userId: '123',
-      status: 'pendente',
-    },
-    {
-      id: '2',
-      title: 'Tarefa 2',
-      description: 'Descrição da Tarefa 2',
-      image: 'https://via.placeholder.com/150',
-      userId: '124',
-      status: 'pendente',
-    },
-  ],
-  emProgresso: [
-    {
-      id: '3',
-      title: 'Tarefa 3',
-      description: 'Descrição da Tarefa 3',
-      image: 'https://via.placeholder.com/150',
-      userId: '125',
-      status: 'emProgresso',
-    },
-  ],
-  concluido: [
-    {
-      id: '4',
-      title: 'Tarefa 4',
-      description: 'Descrição da Tarefa 4',
-      image: 'https://via.placeholder.com/150',
-      userId: '126',
-      status: 'concluido',
-    },
-  ],
-  cancelado: [],
-};
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 function Tasks() {
-  const [tarefas, setTarefas] = useState(tarefasIniciais);
-  const [modalAberto, setModalAberto] = useState(false);
-  const [tarefaEditando, setTarefaEditando] = useState(null);
-  const [colunaAtual, setColunaAtual] = useState(null);
+  const {
+    tasks,
+    handleOpenModal,
+    handleDragEnd,
+    modalAberto,
+    handleCloseModal,
+    handleSaveTask,
+    tarefaEditando,
+    colunaAtual,
+  } = useTasks();
 
-  const handleDragEnd = (result) => {
-    const { source, destination } = result;
-    if (!destination) return;
-
-    const colunaOrigem = source.droppableId;
-    const colunaDestino = destination.droppableId;
-    const tarefasOrigem = Array.from(tarefas[colunaOrigem]);
-    const tarefasDestino = Array.from(tarefas[colunaDestino]);
-    const [tarefaMovida] = tarefasOrigem.splice(source.index, 1);
-
-    tarefaMovida.status = colunaDestino; // Atualiza o status da tarefa
-
-    tarefasDestino.splice(destination.index, 0, tarefaMovida);
-
-    setTarefas({
-      ...tarefas,
-      [colunaOrigem]: tarefasOrigem,
-      [colunaDestino]: tarefasDestino,
-    });
+  const colunaTitulos = {
+    pendente: 'Pendente',
+    emProgresso: 'Em Progresso',
+    concluido: 'Concluído',
+    cancelado: 'Cancelado',
   };
 
-  const handleAbrirModal = (tarefa = null, colunaId = null) => {
-    if (tarefa) {
-      setTarefaEditando(tarefa);
-    } else {
-      setTarefaEditando(null);
-    }
-    setColunaAtual(colunaId);
-    setModalAberto(true);
-  };
-
-  const handleFecharModal = () => {
-    setTarefaEditando(null);
-    setColunaAtual(null);
-    setModalAberto(false);
-  };
-
-  const handleSalvar = (novaTarefa) => {
-    if (tarefaEditando) {
-      const tarefasAtualizadas = {
-        ...tarefas,
-        [colunaAtual]: tarefas[colunaAtual].map((tarefa) =>
-          tarefa.id === tarefaEditando.id
-            ? { ...novaTarefa, status: colunaAtual }
-            : tarefa
-        ),
-      };
-      setTarefas(tarefasAtualizadas);
-    } else if (colunaAtual) {
-      const tarefasAtualizadas = {
-        ...tarefas,
-        [colunaAtual]: [
-          ...tarefas[colunaAtual],
-          { ...novaTarefa, id: `${Date.now()}`, status: colunaAtual },
-        ],
-      };
-      setTarefas(tarefasAtualizadas);
-    }
-    handleFecharModal();
-  };
-
-  const handleDeletar = (colunaId, tarefaId) => {
-    const tarefasAtualizadas = {
-      ...tarefas,
-      [colunaId]: tarefas[colunaId].filter((tarefa) => tarefa.id !== tarefaId),
-    };
-    setTarefas(tarefasAtualizadas);
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map((word) => word[0].toUpperCase())
+      .join('');
   };
 
   return (
-    <div className='flex flex-col space-y-4'>
+    <div className='flex flex-col h-screen'>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className='flex space-x-4'>
-          {Object.keys(tarefas).map((colunaId) => (
+        <div className='flex flex-grow space-x-4 p-4'>
+          {Object.keys(tasks).map((colunaId) => (
             <Droppable key={colunaId} droppableId={colunaId}>
               {(provided) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className='bg-gray-100 p-4 rounded w-1/4 cursor-pointer'
-                  onClick={() => handleAbrirModal(null, colunaId)}
+                  className='bg-gray-100 flex flex-col rounded w-1/4'
                 >
-                  <h2 className='text-lg font-semibold mb-2 capitalize'>
-                    {colunaId}
-                  </h2>
-                  {tarefas[colunaId].map((tarefa, index) => (
-                    <Draggable
-                      key={tarefa.id}
-                      draggableId={tarefa.id}
-                      index={index}
-                    >
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className='bg-white p-4 mb-2 rounded shadow-md'
-                        >
-                          <h3 className='text-sm font-semibold'>
-                            {tarefa.title}
-                          </h3>
-                          <p className='text-sm'>{tarefa.description}</p>
-                          {tarefa.image && (
-                            <img
-                              src={tarefa.image}
-                              alt='Imagem da tarefa'
-                              className='w-full h-32 object-cover mt-2 rounded'
-                            />
-                          )}
-                          <div className='text-xs text-gray-500 mt-2'>
-                            User ID: {tarefa.userId}
+                  <div className='bg-blue-500 text-white p-4 text-center'>
+                    <h2 className='text-lg font-semibold'>
+                      {colunaTitulos[colunaId]}
+                    </h2>
+                  </div>
+                  <div className='flex-grow p-4 overflow-y-auto'>
+                    {tasks[colunaId].map((tarefa, index) => (
+                      <Draggable
+                        key={tarefa.id}
+                        draggableId={tarefa.id}
+                        index={index}
+                      >
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className='bg-white p-4 mb-2 rounded shadow-md'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenModal(tarefa, colunaId);
+                            }}
+                          >
+                            <div className='flex justify-between items-start'>
+                              <h3 className='text-sm font-semibold'>
+                                {tarefa.title}
+                              </h3>
+                              <div className='flex flex-col items-center ml-2'>
+                                {tarefa.user.avatar ? (
+                                  <img
+                                    src={tarefa.user.avatar}
+                                    alt={tarefa.user.name}
+                                    className='w-8 h-8 rounded-full ml-auto'
+                                  />
+                                ) : (
+                                  <div className='w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center ml-auto'>
+                                    {getInitials(tarefa.user.name)}
+                                  </div>
+                                )}
+                                <span className='mt-1 text-xs text-gray-700'>
+                                  {tarefa.user.name}
+                                </span>
+                              </div>
+                            </div>
+                            <p className='text-sm'>{tarefa.description}</p>
+                            {tarefa.image && (
+                              <img
+                                src={tarefa.image}
+                                alt='Imagem da tarefa'
+                                className='w-full h-32 object-cover mt-2 rounded'
+                              />
+                            )}
                           </div>
-                          <div className='mt-2 flex justify-between'>
-                            <button
-                              onClick={() => handleAbrirModal(tarefa, colunaId)}
-                              className='text-blue-500'
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => handleDeletar(colunaId, tarefa.id)}
-                              className='text-red-500'
-                            >
-                              Remover
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
                 </div>
               )}
             </Droppable>
@@ -190,9 +108,10 @@ function Tasks() {
 
       <TaskModal
         isOpen={modalAberto}
-        onRequestClose={handleFecharModal}
-        onSave={handleSalvar}
+        onRequestClose={handleCloseModal}
+        onSave={handleSaveTask}
         editingTask={tarefaEditando}
+        colunaAtual={colunaAtual}
       />
     </div>
   );
