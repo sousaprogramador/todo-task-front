@@ -7,25 +7,27 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     if (token) {
+      api.defaults.headers.Authorization = `Bearer ${token}`;
       setIsAuthenticated(true);
     }
+    setLoading(false);
   }, []);
 
-  const login = async (username, password) => {
+  const login = async (email, senha) => {
     try {
       const response = await api.post('/auth/login', {
-        email: username,
-        password,
+        email,
+        password: senha,
       });
+      const token = response.data.token;
 
-      const token = response.data.accessToken;
-
-      localStorage.setItem('authToken', token);
-
+      sessionStorage.setItem('authToken', token);
+      api.defaults.headers.Authorization = `Bearer ${token}`;
       setIsAuthenticated(true);
 
       return true;
@@ -36,9 +38,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    api.defaults.headers.Authorization = undefined;
     setIsAuthenticated(false);
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>

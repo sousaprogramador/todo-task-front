@@ -3,17 +3,17 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const isAuthenticated = await login(username, password);
+    const isAuthenticated = await login(email, senha);
     if (isAuthenticated) {
-      navigate('/'); // Redireciona para a página principal após o login
+      navigate('/');
     } else {
       setError('Credenciais inválidas');
     }
@@ -27,32 +27,32 @@ function Login() {
           <div className='mb-4'>
             <label
               className='block text-gray-700 text-sm font-bold mb-2'
-              htmlFor='username'
+              htmlFor='email'
             >
-              Username
+              Email
             </label>
             <input
-              id='username'
-              type='text'
-              placeholder='Enter your username'
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id='email'
+              type='email'
+              placeholder='Enter your email'
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500'
             />
           </div>
           <div className='mb-6'>
             <label
               className='block text-gray-700 text-sm font-bold mb-2'
-              htmlFor='password'
+              htmlFor='senha'
             >
-              Password
+              Senha
             </label>
             <input
-              id='password'
+              id='senha'
               type='password'
               placeholder='Enter your password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
               className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500'
             />
           </div>
