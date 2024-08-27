@@ -1,43 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-function TaskForm({ onAddTask }) {
-  const [text, setText] = useState('');
-  const [status, setStatus] = useState('pending');
+function TaskForm({ onSave, editingTask }) {
+  const [taskContent, setTaskContent] = useState('');
+
+  useEffect(() => {
+    if (editingTask) {
+      setTaskContent(editingTask.content);
+    } else {
+      setTaskContent('');
+    }
+  }, [editingTask]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (text.trim()) {
-      onAddTask(text, status);
-      setText('');
-      setStatus('pending');
+    if (taskContent.trim()) {
+      onSave(taskContent);
+      setTaskContent('');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className='bg-white p-6 rounded shadow'>
-      <h2 className='text-2xl font-semibold mb-4'>Adicionar Tarefa</h2>
+    <form onSubmit={handleSubmit}>
+      <h2 className='text-xl font-semibold mb-2'>
+        {editingTask ? 'Editar Tarefa' : 'Adicionar Tarefa'}
+      </h2>
       <input
         type='text'
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder='Nome da tarefa'
-        className='border p-2 mb-4 w-full'
+        value={taskContent}
+        onChange={(e) => setTaskContent(e.target.value)}
+        className='border border-gray-300 p-2 rounded w-full'
+        placeholder='Digite o conteúdo da tarefa'
       />
-      <select
-        value={status}
-        onChange={(e) => setStatus(e.target.value)}
-        className='border p-2 mb-4 w-full'
-      >
-        <option value='pending'>Pendentes</option>
-        <option value='in-progress'>Em Progresso</option>
-        <option value='completed'>Concluídas</option>
-        <option value='cancelled'>Canceladas</option>
-      </select>
       <button
         type='submit'
-        className='bg-blue-500 text-white p-2 rounded hover:bg-blue-600 w-full'
+        className='bg-blue-500 text-white px-4 py-2 rounded mt-2'
       >
-        Adicionar
+        {editingTask ? 'Salvar' : 'Adicionar'}
       </button>
     </form>
   );

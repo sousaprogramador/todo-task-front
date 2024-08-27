@@ -1,63 +1,154 @@
 import React, { useState } from 'react';
-import { DragDropContext } from 'react-beautiful-dnd';
-import TaskForm from '../components/TaskForm';
-import TaskColumn from '../components/TaskColumn';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import TaskModal from '../components/TaskModal';
+
+const initialTasks = {
+  pending: [
+    { id: '1', content: 'Tarefa 1' },
+    { id: '2', content: 'Tarefa 2' },
+  ],
+  inProgress: [{ id: '3', content: 'Tarefa 3' }],
+  completed: [{ id: '4', content: 'Tarefa 4' }],
+  cancelled: [],
+};
 
 function Tasks() {
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(initialTasks);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [creatingTask, setCreatingTask] = useState(false);
 
-  const handleAddTask = (text, status) => {
-    setTasks([...tasks, { text, status }]);
-  };
-
-  const onDragEnd = (result) => {
-    const { destination, source, draggableId } = result;
-
+  const handleDragEnd = (result) => {
+    const { source, destination } = result;
     if (!destination) return;
 
-    const sourceStatus = source.droppableId;
-    const destinationStatus = destination.droppableId;
+    const sourceCol = source.droppableId;
+    const destCol = destination.droppableId;
+    const sourceTasks = Array.from(tasks[sourceCol]);
+    const destTasks = Array.from(tasks[destCol]);
+    const [movedTask] = sourceTasks.splice(source.index, 1);
 
-    const updatedTasks = tasks.map((task) => {
-      if (`${task.status}-${tasks.indexOf(task)}` === draggableId) {
-        return { ...task, status: destinationStatus };
-      }
-      return task;
+    destTasks.splice(destination.index, 0, movedTask);
+
+    setTasks({
+      ...tasks,
+      [sourceCol]: sourceTasks,
+      [destCol]: destTasks,
     });
+  };
 
+  const handleOpenModal = (task = null) => {
+    if (task) {
+      setEditingTask(task);
+    } else {
+      setCreatingTask(true);
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setEditingTask(null);
+    setCreatingTask(false);
+    setIsModalOpen(false);
+  };
+
+  const handleSave = (newTask) => {
+    if (editingTask) {
+      const updatedTasks = {
+        ...tasks,
+        [editingTask.columnId]: tasks[editingTask.columnId].map((task) =>
+          task.id === editingTask.id ? { ...task, content: newTask } : task
+        ),
+      };
+      setTasks(updatedTasks);
+    } else if (creatingTask) {
+      const updatedTasks = {
+        ...tasks,
+        pending: [...tasks.pending, { id: `${Date.now()}`, content: newTask }],
+      };
+      setTasks(updatedTasks);
+    }
+    handleCloseModal();
+  };
+
+  const handleDelete = (colId, taskId) => {
+    const updatedTasks = {
+      ...tasks,
+      [colId]: tasks[colId].filter((task) => task.id !== taskId),
+    };
     setTasks(updatedTasks);
   };
 
-  const groupedTasks = tasks.reduce((acc, task) => {
-    (acc[task.status] = acc[task.status] || []).push(task);
-    return acc;
-  }, {});
-
   return (
-    <div className='flex flex-col min-h-screen'>
-      <main className='flex-grow p-6'>
-        <h1 className='text-3xl font-bold mb-6 text-gray-900'>
-          Lista de Tarefas
-        </h1>
-        <div className='max-w-7xl mx-auto'>
-          <div className='w-full mb-6'>
-            <TaskForm onAddTask={handleAddTask} />
-          </div>
-          <DragDropContext onDragEnd={onDragEnd}>
-            <div className='flex gap-6 overflow-x-auto'>
-              {['pending', 'in-progress', 'completed', 'cancelled'].map(
-                (statusKey) => (
-                  <TaskColumn
-                    key={statusKey}
-                    status={statusKey}
-                    tasks={groupedTasks[statusKey] || []}
-                  />
-                )
+    <div className='flex flex-col space-y-4'>
+      <button
+        onClick={() => handleOpenModal()}
+        className='bg-blue-500 text-white px-4 py-2 rounded mb-4'
+      >
+        Adicionar Nova Tarefa
+      </button>
+
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className='flex space-x-4'>
+          {Object.keys(tasks).map((colId) => (
+            <Droppable key={colId} droppableId={colId}>
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className='bg-gray-100 p-4 rounded w-1/4'
+                >
+                  <h2 className='text-lg font-semibold mb-2 capitalize'>
+                    {colId}
+                  </h2>
+                  {tasks[colId].map((task, index) => (
+                    <Draggable
+                      key={task.id}
+                      draggableId={task.id}
+                      index={index}
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className='bg-white p-4 mb-2 rounded shadow-md'
+                        >
+                          <p className='text-sm'>{task.content}</p>
+                          <div className='mt-2 flex justify-between'>
+                            <button
+                              onClick={() =>
+                                handleOpenModal({ ...task, columnId: colId })
+                              }
+                              className='text-blue-500'
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => handleDelete(colId, task.id)}
+                              className='text-red-500'
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
               )}
-            </div>
-          </DragDropContext>
+            </Droppable>
+          ))}
         </div>
-      </main>
+      </DragDropContext>
+
+      <TaskModal
+        isOpen={isModalOpen}
+        onRequestClose={handleCloseModal}
+        onSave={handleSave}
+        editingTask={editingTask}
+      />
     </div>
   );
 }
