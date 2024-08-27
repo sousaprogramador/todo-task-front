@@ -53,11 +53,9 @@ function Tasks() {
         Lista de Tarefas
       </h1>
       <div className='max-w-7xl mx-auto'>
-        {/* Formulário ocupa toda a largura disponível */}
         <div className='w-full mb-6'>
           <TaskForm onAddTask={handleAddTask} />
         </div>
-        {/* Alinhamento das colunas com flexbox */}
         <div className='flex gap-6 overflow-x-auto'>
           <DragDropContext onDragEnd={onDragEnd}>
             {['pending', 'in-progress', 'completed', 'cancelled'].map(
