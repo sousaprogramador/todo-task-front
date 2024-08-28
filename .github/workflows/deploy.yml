@@ -48,8 +48,8 @@ jobs:
       id: set-env
       run: |
         if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
-          S3_BUCKET=$(cat s3_bucket_name.txt)
-          S3_WEBSITE_URL=$(cat s3_website_url.txt)
+          S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')
+          S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')
           echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
           echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
           echo "S3_BUCKET=$S3_BUCKET"
