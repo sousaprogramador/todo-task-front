@@ -49,12 +49,15 @@ resource "aws_s3_bucket_versioning" "static_site_versioning" {
   depends_on = [aws_s3_bucket.static_site]
 }
 
+locals {
+  bucket_name = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.bucket : (length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].bucket : "")
+  website_url = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.website_endpoint : (length(aws_s3_bucket_website_configuration) > 0 ? aws_s3_bucket_website_configuration.static_site_website[0].website_endpoint : "")
+}
+
 output "s3_bucket_name" {
-  value       = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.bucket : aws_s3_bucket.static_site[0].bucket
-  description = "O nome do bucket S3"
+  value = local.bucket_name
 }
 
 output "s3_website_url" {
-  value       = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.website_endpoint : aws_s3_bucket_website_configuration.static_site_website[0].website_endpoint
-  description = "A URL do site no S3"
+  value = local.website_url
 }
