@@ -35,14 +35,45 @@ jobs:
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
+        # Capture Terraform outputs
         S3_BUCKET=$(terraform output -raw s3_bucket_name || echo "ERROR")
         S3_WEBSITE_URL=$(terraform output -raw s3_website_url || echo "ERROR")
+
+        # Print outputs for debugging
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
+
+        # Check if extraction was successful
         if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
           echo "Error extracting Terraform outputs"
           exit 1
         fi
+
+        # Set environment variables
         echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+      shell: /usr/bin/bash -e {0}
+      env:
+        TERRAFORM_CLI_PATH: /home/runner/work/_temp/fe1a9b41-6570-4dcb-b020-af84743ac7b8
+
+    - name: Verify Files
+      run: |
+        echo "Verifying files..."
+        ls -l ./infra
+        if [ -f ./infra/s3_bucket_name.txt ] && [ -f ./infra/s3_website_url.txt ]; then
+          echo "Files found."
+        else
+          echo "Error: Files not found."
+          exit 1
+        fi
+
+    - name: Upload Terraform Outputs
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-outputs
+        path: |
+          ./infra/s3_bucket_name.txt
+          ./infra/s3_website_url.txt
 
   deploy:
     runs-on: ubuntu-latest
@@ -62,6 +93,26 @@ jobs:
 
     - name: Build site
       run: npm run build
+
+    - name: Download Terraform Outputs
+      uses: actions/download-artifact@v3
+      with:
+        name: terraform-outputs
+
+    - name: Set Environment Variables
+      run: |
+        echo "Setting environment variables..."
+        if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
+          S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')
+          S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')
+          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+        else
+          echo "Error: Files not found."
+          exit 1
+        fi
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
     - name: Check AWS CLI Version
       run: aws --version
