@@ -36,13 +36,9 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
 
-        # Redirect output to a temporary file to ensure clean capture
-        terraform output -raw s3_bucket_name > s3_bucket_name.txt
-        terraform output -raw s3_website_url > s3_website_url.txt
-
-        # Read the first line of the file to capture the correct value
-        S3_BUCKET=$(head -n 1 s3_bucket_name.txt | tr -d '\r' | tr -d '\n')
-        S3_WEBSITE_URL=$(head -n 1 s3_website_url.txt | tr -d '\r' | tr -d '\n')
+        # Capture Terraform outputs directly
+        S3_BUCKET=$(terraform output -raw s3_bucket_name)
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
 
         # Ensure outputs are not empty
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
@@ -50,16 +46,13 @@ jobs:
           exit 1
         fi
 
-        # Set environment variables for the next step
-        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
+        # Set environment variables for the next steps
+        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
 
-        # Clean up temporary files
-        rm s3_bucket_name.txt s3_website_url.txt
-
-        # Debug outputs
-        echo "S3_BUCKET=$S3_BUCKET"
-        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
+        # Debug output for confirmation
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
       shell: bash
 
     - name: Deploy to S3
