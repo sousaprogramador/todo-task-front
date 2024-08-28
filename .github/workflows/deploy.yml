@@ -38,14 +38,17 @@ jobs:
         terraform output -raw s3_bucket_name > s3_bucket_name.txt
         terraform output -raw s3_website_url > s3_website_url.txt
         echo "Bucket Name Output:"
-        cat s3_bucket_name.txt
+        cat s3_bucket_name.txt || echo "Arquivo s3_bucket_name.txt não encontrado."
         echo "Website URL Output:"
-        cat s3_website_url.txt
-        # List files in the current directory for verification
+        cat s3_website_url.txt || echo "Arquivo s3_website_url.txt não encontrado."
         ls -l
-        # Verify files are created and not empty
-        if [ ! -s s3_bucket_name.txt ] || [ ! -s s3_website_url.txt ]; then
-          echo "Erro: Arquivos de saída estão vazios ou não foram criados."
+        # Check if the files were created and are not empty
+        if [ ! -s s3_bucket_name.txt ]; then
+          echo "Erro: Arquivo s3_bucket_name.txt não foi criado ou está vazio."
+          exit 1
+        fi
+        if [ ! -s s3_website_url.txt ]; then
+          echo "Erro: Arquivo s3_website_url.txt não foi criado ou está vazio."
           exit 1
         fi
 
