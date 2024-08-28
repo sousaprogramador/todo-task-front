@@ -34,8 +34,8 @@ jobs:
       id: extract-outputs
       working-directory: ./infra
       run: |
-        terraform output s3_bucket_name > s3_bucket_name.txt
-        terraform output s3_website_url > s3_website_url.txt
+        terraform output -raw s3_bucket_name > s3_bucket_name.txt
+        terraform output -raw s3_website_url > s3_website_url.txt
         echo "Contents of s3_bucket_name.txt:"
         cat s3_bucket_name.txt
         echo "Contents of s3_website_url.txt:"
