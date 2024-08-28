@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTasks } from '../context/TaskContext';
 
 function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
   const [id, setId] = useState(null);
