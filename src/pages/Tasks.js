@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useTasks } from '../context/TaskContext';
 import TaskModal from '../components/TaskModal';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 function Tasks() {
   const { tasks, handleSaveTask, handleDeleteTask } = useTasks();
@@ -19,7 +18,7 @@ function Tasks() {
   };
 
   const handleAddTaskClick = () => {
-    openModal(); // Abre o modal sem passar uma tarefa para edição
+    openModal();
   };
 
   return (
@@ -32,52 +31,43 @@ function Tasks() {
           Nova Tarefa
         </button>
       </div>
-      <DragDropContext onDragEnd={handleSaveTask}>
-        <div className='flex flex-grow space-x-4 p-4'>
-          {Object.keys(tasks).map((colunaId) => (
-            <Droppable key={colunaId} droppableId={colunaId}>
-              {(provided) => (
+      <div className='flex flex-grow space-x-4 p-4'>
+        {Object.keys(tasks).map((colunaId) => (
+          <div
+            key={colunaId}
+            className='bg-gray-100 flex flex-col rounded w-1/4'
+          >
+            <div className='bg-blue-500 text-white p-4 text-center'>
+              <h2 className='text-lg font-semibold capitalize'>{colunaId}</h2>
+            </div>
+            <div className='flex-grow p-4 overflow-y-auto'>
+              {tasks[colunaId].map((tarefa) => (
                 <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className='bg-gray-100 flex flex-col rounded w-1/4'
+                  key={tarefa.id}
+                  className='bg-white p-4 mb-2 rounded shadow-md'
                 >
-                  <div className='bg-blue-500 text-white p-4 text-center'>
-                    <h2 className='text-lg font-semibold capitalize'>
-                      {colunaId}
-                    </h2>
-                  </div>
-                  <div className='flex-grow p-4 overflow-y-auto'>
-                    {tasks[colunaId].map((tarefa, index) => (
-                      <Draggable
-                        key={tarefa.id}
-                        draggableId={tarefa.id}
-                        index={index}
-                      >
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className='bg-white p-4 mb-2 rounded shadow-md'
-                            onClick={() => openModal(tarefa)}
-                          >
-                            <h3 className='text-sm font-semibold'>
-                              {tarefa.title}
-                            </h3>
-                            <p className='text-sm'>{tarefa.description}</p>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
+                  <h3 className='text-sm font-semibold'>{tarefa.title}</h3>
+                  <p className='text-sm'>{tarefa.description}</p>
+                  <div className='flex justify-between items-center mt-4'>
+                    <button
+                      onClick={() => openModal(tarefa)}
+                      className='text-blue-500 hover:text-blue-700'
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(tarefa.id)}
+                      className='text-red-500 hover:text-red-700'
+                    >
+                      Excluir
+                    </button>
                   </div>
                 </div>
-              )}
-            </Droppable>
-          ))}
-        </div>
-      </DragDropContext>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {isModalOpen && (
         <TaskModal
