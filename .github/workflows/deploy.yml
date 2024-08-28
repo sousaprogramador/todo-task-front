@@ -36,11 +36,15 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
         
-        # Capture Terraform outputs using awk to filter only the correct lines
-        S3_BUCKET=$(terraform output -raw s3_bucket_name | awk 'NR==1{print $1}')
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | awk 'NR==1{print $1}')
+        # Redirect output to a temporary file
+        terraform output -raw s3_bucket_name > s3_bucket_output.txt
+        terraform output -raw s3_website_url > s3_website_output.txt
 
-        # Ensure outputs are not empty and contain no unexpected text
+        # Read the first line of the file to capture the correct value
+        S3_BUCKET=$(head -n 1 s3_bucket_output.txt)
+        S3_WEBSITE_URL=$(head -n 1 s3_website_output.txt)
+
+        # Ensure outputs are not empty
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
           echo "Error extracting Terraform outputs"
           exit 1
@@ -53,6 +57,9 @@ jobs:
         # Debug outputs
         echo "S3_BUCKET=$S3_BUCKET"
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
+
+        # Clean up temporary files
+        rm s3_bucket_output.txt s3_website_output.txt
       shell: bash
 
     - name: Deploy to S3
