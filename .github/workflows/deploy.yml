@@ -35,14 +35,10 @@ jobs:
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
-        
-        # Redirect output to a temporary file
-        terraform output -raw s3_bucket_name > s3_bucket_output.txt
-        terraform output -raw s3_website_url > s3_website_output.txt
 
-        # Read the first line of the file to capture the correct value
-        S3_BUCKET=$(head -n 1 s3_bucket_output.txt)
-        S3_WEBSITE_URL=$(head -n 1 s3_website_output.txt)
+        # Run terraform output and capture the result directly
+        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null)
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null)
 
         # Ensure outputs are not empty
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
@@ -57,9 +53,6 @@ jobs:
         # Debug outputs
         echo "S3_BUCKET=$S3_BUCKET"
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
-
-        # Clean up temporary files
-        rm s3_bucket_output.txt s3_website_output.txt
       shell: bash
 
     - name: Deploy to S3
