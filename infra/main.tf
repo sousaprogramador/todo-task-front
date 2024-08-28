@@ -23,7 +23,7 @@ resource "aws_s3_bucket" "static_site" {
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
   count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
-  bucket = aws_s3_bucket.static_site[count.index].bucket
+  bucket = coalesce(aws_s3_bucket.static_site[0].bucket, data.aws_s3_bucket.existing_bucket.bucket)
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -40,7 +40,7 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
 
 resource "aws_s3_bucket_public_access_block" "public_access_block" {
   count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
-  bucket = aws_s3_bucket.static_site[count.index].bucket
+  bucket = coalesce(aws_s3_bucket.static_site[0].bucket, data.aws_s3_bucket.existing_bucket.bucket)
 
   block_public_acls       = false
   block_public_policy     = false
@@ -49,11 +49,11 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 }
 
 output "s3_bucket_name" {
-  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].bucket : data.aws_s3_bucket.existing_bucket.bucket
+  value       = coalesce(data.aws_s3_bucket.existing_bucket.bucket, aws_s3_bucket.static_site[0].bucket)
   description = "O nome do bucket S3"
 }
 
 output "s3_website_url" {
-  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].website_endpoint : "O bucket já existe, URL não gerada."
+  value       = coalesce(data.aws_s3_bucket.existing_bucket.website_endpoint, aws_s3_bucket.static_site[0].website_endpoint)
   description = "A URL do site no S3"
 }
