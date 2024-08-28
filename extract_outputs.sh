@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Extrair saídas do Terraform
 S3_BUCKET=$(terraform output -raw s3_bucket_name)
