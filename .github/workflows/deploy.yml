@@ -36,17 +36,19 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
 
-        # Execute the terraform output command directly and filter out the path prefix
-        terraform output -json > raw_outputs.json
-        tail -n +2 raw_outputs.json > outputs.json
+        # Capture the output in JSON format directly to a file
+        terraform output -json > outputs.json
 
         # Print the JSON content for verification
         echo "Captured JSON Outputs:"
         cat outputs.json
 
+        # Clean up any extra whitespace or lines
+        sed -i '/^[[:space:]]*$/d' outputs.json
+
         # Parse the JSON to extract values using jq
-        S3_BUCKET=$(jq -r '.s3_bucket_name.value' outputs.json)
-        S3_WEBSITE_URL=$(jq -r '.s3_website_url.value' outputs.json)
+        S3_BUCKET=$(cat outputs.json | jq -r '.s3_bucket_name.value')
+        S3_WEBSITE_URL=$(cat outputs.json | jq -r '.s3_website_url.value')
 
         # Ensure outputs are not empty and valid
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
