@@ -41,21 +41,13 @@ jobs:
         echo "Contents of s3_website_url.txt:"
         cat s3_website_url.txt
 
-    - name: Set Environment Variables
-      id: set-env
-      run: |
-        echo "Setting environment variables..."
-        if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
-          S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')
-          S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')
-          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
-        else
-          echo "Erro: Arquivos de saída não encontrados."
-          exit 1
-        fi
-        echo "S3_BUCKET=${S3_BUCKET}"
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
+    - name: Upload Terraform Outputs
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-outputs
+        path: |
+          s3_bucket_name.txt
+          s3_website_url.txt
 
   deploy:
     runs-on: ubuntu-latest
@@ -75,6 +67,26 @@ jobs:
 
     - name: Build site
       run: npm run build
+
+    - name: Download Terraform Outputs
+      uses: actions/download-artifact@v3
+      with:
+        name: terraform-outputs
+
+    - name: Set Environment Variables
+      run: |
+        echo "Setting environment variables..."
+        if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
+          S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')
+          S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')
+          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+        else
+          echo "Erro: Arquivos de saída não encontrados."
+          exit 1
+        fi
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
     - name: Deploy to S3
       run: |
