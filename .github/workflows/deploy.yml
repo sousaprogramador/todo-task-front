@@ -37,8 +37,8 @@ jobs:
         echo "Extracting Terraform Outputs..."
 
         # Capture Terraform output and remove any extra characters
-        S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\r' || echo "ERROR")
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\r' || echo "ERROR")
+        S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\r' | tr -d '\n' || echo "ERROR")
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\r' | tr -d '\n' || echo "ERROR")
 
         # Print outputs for debugging
         echo "S3_BUCKET=${S3_BUCKET}"
@@ -50,13 +50,10 @@ jobs:
           exit 1
         fi
 
-        # Ensure that the output values are correctly formatted and passed to GitHub Actions environment
+        # Output to GitHub Actions environment
         echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
       shell: bash
-
-    - name: Verify AWS CLI
-      run: aws --version
 
     - name: Deploy to S3
       run: |
