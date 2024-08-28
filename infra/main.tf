@@ -49,11 +49,11 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 }
 
 output "s3_bucket_name" {
-  value       = data.aws_s3_bucket.existing_bucket.id == "" ? aws_s3_bucket.static_site[0].bucket : data.aws_s3_bucket.existing_bucket.bucket
+  value       = coalesce(aws_s3_bucket.static_site[0].bucket, data.aws_s3_bucket.existing_bucket.bucket)
   description = "O nome do bucket S3"
 }
 
 output "s3_website_url" {
-  value       = data.aws_s3_bucket.existing_bucket.id == "" ? aws_s3_bucket.static_site[0].website_endpoint : "O bucket já existe, URL não gerada."
+  value       = coalesce(aws_s3_bucket.static_site[0].website_endpoint, "O bucket já existe, URL não gerada.")
   description = "A URL do site no S3"
 }
