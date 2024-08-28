@@ -10,51 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.9.5
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
 
-    - name: Terraform Init
-      working-directory: ./infra
-      run: terraform init
+      - name: Terraform Init
+        working-directory: ./infra
+        run: terraform init
 
-    - name: Terraform Apply
-      working-directory: ./infra
-      run: terraform apply -auto-approve
+      - name: Terraform Apply
+        working-directory: ./infra
+        run: terraform apply -auto-approve
 
-    - name: Extract Terraform Outputs
-      id: extract_outputs
-      working-directory: ./infra
-      run: |
-        #!/bin/bash
-        # Extrair saídas do Terraform
-        S3_BUCKET=$(terraform output -raw s3_bucket_name)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+      - name: Extract Terraform Outputs
+        id: extract_outputs
+        working-directory: ./infra
+        run: |
+          echo "Extracting Terraform Outputs..."
+          S3_BUCKET=$(terraform output -raw s3_bucket_name)
+          S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+          echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
 
-        # Verificar se as saídas foram extraídas com sucesso
-        if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
-          echo "Error: No outputs found or outputs are empty."
-          exit 1
-        fi
-
-        # Definir variáveis de ambiente para os próximos passos
-        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
-
-        # Depuração
-        echo "S3_BUCKET=$S3_BUCKET"
-        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
-
-    - name: Deploy to S3
-      run: |
-        echo "Deploying to S3..."
-        aws s3 sync ./build s3://$S3_BUCKET --delete
-        aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
-      env:
-        AWS_REGION: sa-east-1
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Deploy to S3
+        run: |
+          echo "Deploying to S3..."
+          aws s3 sync ./build s3://$S3_BUCKET --delete
+          aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
+        env:
+          AWS_REGION: sa-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
