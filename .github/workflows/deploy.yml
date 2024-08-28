@@ -44,7 +44,8 @@ jobs:
     - name: Verify Files
       run: |
         echo "Verifying files..."
-        if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
+        ls -l ./infra
+        if [ -f ./infra/s3_bucket_name.txt ] && [ -f ./infra/s3_website_url.txt ]; then
           echo "Files found."
         else
           echo "Error: Files not found."
@@ -56,8 +57,8 @@ jobs:
       with:
         name: terraform-outputs
         path: |
-          s3_bucket_name.txt
-          s3_website_url.txt
+          ./infra/s3_bucket_name.txt
+          ./infra/s3_website_url.txt
 
   deploy:
     runs-on: ubuntu-latest
