@@ -36,8 +36,8 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
 
-        # Capture the output in JSON format directly to a file
-        /home/runner/work/_temp/c3835471-d67f-4a1d-bb10-62c042772021/terraform-bin output -json > outputs.json
+        # Capture the output in JSON format directly to a file using the Terraform binary provided by setup-terraform
+        terraform output -json > outputs.json
 
         # Print the JSON content for verification
         echo "Captured JSON Outputs:"
