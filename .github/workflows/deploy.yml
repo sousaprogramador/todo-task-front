@@ -36,12 +36,16 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
         
-        # Capture Terraform outputs and filter out debug messages
-        S3_BUCKET=$(terraform output -raw s3_bucket_name | awk '/^[^[]/')
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | awk '/^[^[]/')
+        # Capture full Terraform outputs
+        FULL_S3_BUCKET=$(terraform output -raw s3_bucket_name)
+        FULL_S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
 
-        # Ensure outputs are not empty and contain no unexpected text
-        if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" || "$S3_BUCKET" == *"::debug::"* || "$S3_WEBSITE_URL" == *"::debug::"* ]]; then
+        # Clean up the outputs by removing anything after the actual value
+        S3_BUCKET=$(echo "$FULL_S3_BUCKET" | cut -d' ' -f1)
+        S3_WEBSITE_URL=$(echo "$FULL_S3_WEBSITE_URL" | cut -d' ' -f1)
+
+        # Ensure outputs are not empty
+        if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
           echo "Error extracting Terraform outputs"
           exit 1
         fi
