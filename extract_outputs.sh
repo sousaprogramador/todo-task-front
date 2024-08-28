@@ -1,12 +1,8 @@
 #!/bin/bash
 
-# Extrair saídas do Terraform e salvar em arquivos temporários
-terraform output -raw s3_bucket_name > s3_bucket_name.txt
-terraform output -raw s3_website_url > s3_website_url.txt
-
-# Ler e limpar as saídas
-S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\r' | tr -d '\n')
-S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\r' | tr -d '\n')
+# Extrair saídas do Terraform
+S3_BUCKET=$(terraform output -raw s3_bucket_name)
+S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
 
 # Verificar se as variáveis estão vazias
 if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
@@ -17,9 +13,6 @@ fi
 # Configurar variáveis de ambiente no GitHub Actions
 echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
 echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
-
-# Limpar arquivos temporários
-rm s3_bucket_name.txt s3_website_url.txt
 
 # Confirmar saída limpa
 echo "S3_BUCKET=$S3_BUCKET"
