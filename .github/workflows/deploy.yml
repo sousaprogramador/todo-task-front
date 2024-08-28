@@ -8,47 +8,32 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.3.7
+      - name: Install Terraform 1.9.5
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.9.5
 
-    - name: Change Directory to infra
-      run: cd infra
+      - name: Terraform Init
+        run: terraform init ./infra
 
-    - name: Initialize Terraform
-      run: terraform init
-      working-directory: infra
+      - name: Terraform Plan
+        run: terraform plan ./infra
 
-    - name: Plan Terraform
-      run: terraform plan
-      working-directory: infra
+      - name: Terraform Apply
+        run: terraform apply -auto-approve ./infra
 
-    - name: Apply Terraform
-      run: terraform apply -auto-approve
-      working-directory: infra
-
-    - name: Extract Terraform Outputs
-      id: extract_outputs
-      run: |
-        echo "Extracting Terraform Outputs..."
-        cd infra
-        S3_BUCKET=$(terraform output -raw s3_bucket_name || echo "ERROR")
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url || echo "ERROR")
-
-        echo "S3_BUCKET=${S3_BUCKET}"
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
-
-        if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
-          echo "Error extracting Terraform outputs"
-          exit 1
-        fi
-
-        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
-      working-directory: infra
+      - name: Extract Terraform Outputs
+        run: |
+          echo "Extracting Terraform Outputs..."
+          S3_BUCKET=$(terraform output -raw s3_bucket_name || echo "ERROR")
+          S3_WEBSITE_URL=$(terraform output -raw s3_website_url || echo "ERROR")
+          if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
+            echo "Error extracting Terraform outputs"
+            exit 1
+          fi
+          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
