@@ -8,33 +8,56 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.7
+          terraform_version: 1.5.0
 
       - name: Terraform Init
-        working-directory: ./infra
         run: terraform init
+        working-directory: ./infra
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ./infra
 
       - name: Terraform Apply
-        working-directory: ./infra
         run: terraform apply -auto-approve
+        working-directory: ./infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: sa-east-1
 
       - name: Extract Terraform Outputs
         id: extract_outputs
-        working-directory: ./infra
         run: |
           echo "Extracting Terraform Outputs..."
           S3_BUCKET=$(terraform output -raw s3_bucket_name)
           S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+          
+          # Ensure outputs are not empty
+          if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
+            echo "Error extracting Terraform outputs"
+            exit 1
+          fi
+          
+          # Set environment variables for the next step
           echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
           echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
+
+          # Debug outputs
+          echo "S3_BUCKET=$S3_BUCKET"
+          echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
+        working-directory: ./infra
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: sa-east-1
 
       - name: Deploy to S3
         run: |
@@ -42,6 +65,6 @@ jobs:
           aws s3 sync ./build s3://$S3_BUCKET --delete
           aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
         env:
-          AWS_REGION: sa-east-1
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: sa-east-1
