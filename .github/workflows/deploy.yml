@@ -30,28 +30,23 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform apply -auto-approve
 
-    - name: Extract and Debug Terraform Outputs
-      id: debug_outputs
+    - name: Save Terraform Outputs to File
+      id: save_outputs
       working-directory: ./infra
       run: |
-        echo "Extracting Terraform Outputs..."
+        echo "Saving Terraform Outputs to File..."
+        terraform output -json > terraform_outputs.json
+        cat terraform_outputs.json
 
-        # Captura o JSON do output do Terraform
-        JSON_OUTPUT=$(terraform output -json 2>/dev/null)
+    - name: Extract Outputs from File
+      id: extract_outputs
+      run: |
+        echo "Extracting Outputs from File..."
+        S3_BUCKET=$(jq -r '.s3_bucket_name.value' terraform_outputs.json)
+        S3_WEBSITE_URL=$(jq -r '.s3_website_url.value' terraform_outputs.json)
 
-        # Exibe o JSON para verificação
-        echo "Captured JSON Outputs:"
-        echo "$JSON_OUTPUT"
-
-        # Verifica e processa o JSON com jq
-        if echo "$JSON_OUTPUT" | jq empty; then
-          echo "JSON válido capturado."
-          echo "S3_BUCKET=$(echo "$JSON_OUTPUT" | jq -r '.s3_bucket_name.value')" >> $GITHUB_ENV
-          echo "S3_WEBSITE_URL=$(echo "$JSON_OUTPUT" | jq -r '.s3_website_url.value')" >> $GITHUB_ENV
-        else
-          echo "Erro: O output do Terraform não é um JSON válido."
-          exit 1
-        fi
+        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
 
     - name: Deploy to S3
       run: |
