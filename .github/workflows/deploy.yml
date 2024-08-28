@@ -35,23 +35,27 @@ jobs:
       working-directory: ./infra
       run: |
         echo "Extracting Terraform outputs..."
-        S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\n\r')
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\n\r')
-        echo "S3_BUCKET=$S3_BUCKET" > output.env
-        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> output.env
-        cat output.env
+        terraform output -raw s3_bucket_name > s3_bucket_name.txt
+        terraform output -raw s3_website_url > s3_website_url.txt
+        cat s3_bucket_name.txt
+        cat s3_website_url.txt
+        if [ ! -s s3_bucket_name.txt ] || [ ! -s s3_website_url.txt ]; then
+          echo "Erro: Arquivos de saída estão vazios."
+          exit 1
+        fi
 
-    - name: Read outputs to environment variables
-      id: read_env
+    - name: Set environment variables
+      id: set-env
       run: |
-        if [ -f output.env ]; then
-          source output.env
-          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
-          echo "S3_BUCKET=${S3_BUCKET}"
-          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
+        if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
+          S3_BUCKET=$(cat s3_bucket_name.txt)
+          S3_WEBSITE_URL=$(cat s3_website_url.txt)
+          echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
+          echo "S3_BUCKET=$S3_BUCKET"
+          echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
         else
-          echo "Erro: output.env não encontrado."
+          echo "Erro: Arquivos de saída não encontrados."
           exit 1
       continue-on-error: true
 
