@@ -30,35 +30,22 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform apply -auto-approve
 
-    - name: Verify Directory
-      run: ls -la ./infra  # Verifica o conteúdo do diretório onde o arquivo deve ser salvo
-
-    - name: Save Terraform Outputs to File
-      id: save_outputs
+    - name: Extract Terraform Outputs
+      id: extract_outputs
       working-directory: ./infra
       run: |
-        echo "Saving Terraform Outputs to File..."
-        terraform output -json > terraform_outputs.json
-        echo "Contents of terraform_outputs.json:"
-        cat terraform_outputs.json  # Exibe o conteúdo do arquivo para depuração
+        echo "Extracting Terraform Outputs..."
+        # Extraíndo os valores diretamente do terraform output
+        S3_BUCKET=$(terraform output -raw s3_bucket_name)
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
 
-    - name: List Files in Directory
-      run: ls -la ./infra  # Verifica a presença do arquivo no diretório
+        # Exibindo para depuração
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
-    - name: Extract Outputs from File
-      id: extract_outputs
-      run: |
-        echo "Extracting Outputs from File..."
-        if [ -f ./infra/terraform_outputs.json ]; then
-          S3_BUCKET=$(jq -r '.s3_bucket_name.value' ./infra/terraform_outputs.json)
-          S3_WEBSITE_URL=$(jq -r '.s3_website_url.value' ./infra/terraform_outputs.json)
-
-          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
-        else
-          echo "Error: terraform_outputs.json file not found."
-          exit 1
-        fi
+        # Salvando variáveis de ambiente para etapas posteriores
+        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
 
     - name: Deploy to S3
       run: |
