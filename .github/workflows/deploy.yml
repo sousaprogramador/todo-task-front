@@ -8,6 +8,9 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    outputs:
+      s3_bucket_name: ${{ steps.extract-outputs.outputs.s3_bucket_name }}
+      s3_website_url: ${{ steps.extract-outputs.outputs.s3_website_url }}
 
     steps:
     - name: Checkout code
@@ -37,35 +40,37 @@ jobs:
         echo "Extracting Terraform Outputs..."
         
         # Capture Terraform output
-        S3_BUCKET=$(terraform output -raw s3_bucket_name)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "ERROR")
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null || echo "ERROR")
 
         # Print outputs for debugging
         echo "S3_BUCKET=${S3_BUCKET}"
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
-        # Check for errors and set environment variables
-        if [ -z "$S3_BUCKET" ] || [ -z "$S3_WEBSITE_URL" ]; then
+        # Check for errors and set outputs
+        if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
           echo "Error extracting Terraform outputs"
           exit 1
         fi
 
-        # Ensure environment variables are correctly formatted
-        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+        # Set outputs
+        echo "::set-output name=s3_bucket_name::$S3_BUCKET"
+        echo "::set-output name=s3_website_url::$S3_WEBSITE_URL"
       shell: bash
 
-    - name: Check AWS CLI version
-      run: aws --version
+  deploy:
+    runs-on: ubuntu-latest
+    needs: terraform
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
 
     - name: Deploy to S3
       run: |
         echo "Deploying to S3..."
-        aws s3 sync ./build s3://$S3_BUCKET --delete
-        aws s3 website s3://$S3_BUCKET/ --index-document index.html --error-document error.html
+        aws s3 sync ./build s3://${{ needs.terraform.outputs.s3_bucket_name }} --delete
+        aws s3 website s3://${{ needs.terraform.outputs.s3_bucket_name }}/ --index-document index.html --error-document error.html
       env:
         AWS_REGION: "sa-east-1"
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        S3_BUCKET: ${{ env.S3_BUCKET }}
-        S3_WEBSITE_URL: ${{ env.S3_WEBSITE_URL }}
