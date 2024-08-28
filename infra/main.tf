@@ -22,6 +22,15 @@ resource "aws_s3_bucket_website_configuration" "static_site" {
   }
 }
 
+resource "aws_s3_bucket_public_access_block" "static_site_public_access" {
+  bucket = aws_s3_bucket.static_site.bucket
+
+  block_public_acls       = false
+  ignore_public_acls      = false
+  block_public_policy     = false
+  restrict_public_buckets = false
+}
+
 resource "aws_s3_bucket_ownership_controls" "static_site_ownership" {
   bucket = aws_s3_bucket.static_site.bucket
 
@@ -43,7 +52,7 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
       }
     ]
   })
-  depends_on = [aws_s3_bucket_ownership_controls.static_site_ownership]
+  depends_on = [aws_s3_bucket_public_access_block.static_site_public_access]
 }
 
 resource "aws_s3_bucket_versioning" "static_site_versioning" {
