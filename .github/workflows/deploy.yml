@@ -37,15 +37,17 @@ jobs:
         echo "Extracting Terraform outputs..."
         S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\n\r')
         S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\n\r')
-        echo "Raw S3_BUCKET Output: $(terraform output -raw s3_bucket_name)"
-        echo "Raw S3_WEBSITE_URL Output: $(terraform output -raw s3_website_url)"
-        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
-        echo "Bucket Name: $S3_BUCKET"
-        echo "Website URL: $S3_WEBSITE_URL"
+        echo "S3_BUCKET=$S3_BUCKET" >> output.env
+        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> output.env
+        cat output.env
 
-    - name: Verify $GITHUB_ENV content
-      run: cat $GITHUB_ENV
+    - name: Read outputs to environment variables
+      run: |
+        source output.env
+        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
   deploy:
     runs-on: ubuntu-latest
