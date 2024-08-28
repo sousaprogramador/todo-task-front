@@ -2,7 +2,6 @@ provider "aws" {
   region = "sa-east-1"
 }
 
-# Verifica se o bucket já existe
 data "aws_s3_bucket" "existing_bucket" {
   bucket = "todo-site-sousa-dev"
 }
@@ -10,15 +9,15 @@ data "aws_s3_bucket" "existing_bucket" {
 resource "aws_s3_bucket" "static_site" {
   count  = data.aws_s3_bucket.existing_bucket.bucket != "" ? 0 : 1
   bucket = "todo-site-sousa-dev"
+}
 
-  versioning {
-    enabled = true
+resource "aws_s3_bucket_versioning" "static_site_versioning" {
+  count  = data.aws_s3_bucket.existing_bucket.bucket != "" ? 0 : 1
+  bucket = aws_s3_bucket.static_site[0].bucket
+  versioning_configuration {
+    status = "Enabled"
   }
-
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
-  }
+  depends_on = [aws_s3_bucket.static_site]
 }
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
@@ -49,11 +48,11 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 }
 
 output "s3_bucket_name" {
-  value       = coalesce(data.aws_s3_bucket.existing_bucket.bucket, aws_s3_bucket.static_site[0].bucket)
+  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].bucket : data.aws_s3_bucket.existing_bucket.bucket
   description = "O nome do bucket S3"
 }
 
 output "s3_website_url" {
-  value       = coalesce(data.aws_s3_bucket.existing_bucket.website_endpoint, aws_s3_bucket.static_site[0].website_endpoint)
+  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].website_endpoint : data.aws_s3_bucket.existing_bucket.website_endpoint
   description = "A URL do site no S3"
 }
