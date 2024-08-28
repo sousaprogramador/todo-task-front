@@ -36,9 +36,10 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
 
-        # Run terraform output and capture the result directly
-        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null)
+        # Capture Terraform outputs as JSON and parse using jq
+        terraform output -json > outputs.json
+        S3_BUCKET=$(jq -r .s3_bucket_name.value < outputs.json)
+        S3_WEBSITE_URL=$(jq -r .s3_website_url.value < outputs.json)
 
         # Ensure outputs are not empty
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
@@ -53,6 +54,9 @@ jobs:
         # Debug outputs
         echo "S3_BUCKET=$S3_BUCKET"
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
+
+        # Clean up temporary files
+        rm outputs.json
       shell: bash
 
     - name: Deploy to S3
