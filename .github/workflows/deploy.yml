@@ -37,7 +37,9 @@ jobs:
         echo "Extracting Terraform outputs..."
         terraform output -raw s3_bucket_name > s3_bucket_name.txt
         terraform output -raw s3_website_url > s3_website_url.txt
+        echo "Contents of s3_bucket_name.txt:"
         cat s3_bucket_name.txt
+        echo "Contents of s3_website_url.txt:"
         cat s3_website_url.txt
 
     - name: Set Environment Variables
@@ -47,12 +49,14 @@ jobs:
         if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
           S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')
           S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')
-          echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
-          echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
+          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
         else
           echo "Erro: Arquivos de saída não encontrados."
           exit 1
         fi
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
   deploy:
     runs-on: ubuntu-latest
@@ -75,6 +79,7 @@ jobs:
 
     - name: Deploy to S3
       run: |
+        echo "Deploying to S3..."
         if [ -z "$S3_BUCKET" ]; then
           echo "Erro: Nome do bucket S3 não definido."
           exit 1
