@@ -8,43 +8,28 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.9.5
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: Terraform Init
-      working-directory: ./infra
-      run: terraform init
+      - name: Build project
+        run: npm run build
 
-    - name: Terraform Apply
-      working-directory: ./infra
-      env:
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      run: terraform apply -auto-approve
-
-    - name: Set Environment Variables
-      run: |
-        echo "S3_BUCKET=todo-site-sousa-dev" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=todo-site-sousa-dev.s3-website-sa-east-1.amazonaws.com" >> $GITHUB_ENV
-
-    - name: Deploy to S3
-      run: |
-        echo "Deploying to S3..."
-        echo "Using S3_BUCKET: $S3_BUCKET"
-        echo "Using S3_WEBSITE_URL: $S3_WEBSITE_URL"
-        aws s3 sync ./build s3://$S3_BUCKET --delete
-        aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
-      env:
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        S3_BUCKET: ${{ env.S3_BUCKET }}
-        S3_WEBSITE_URL: ${{ env.S3_WEBSITE_URL }}
+      - name: Deploy to S3
+        env:
+          AWS_REGION: 'sa-east-1'
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_WEBSITE_URL: ${{ secrets.S3_WEBSITE_URL }}
+        run: |
+          echo "Deploying to S3..."
+          echo "Using S3_BUCKET: $S3_BUCKET"
+          echo "Using S3_WEBSITE_URL: $S3_WEBSITE_URL"
+          aws s3 sync ./build s3://$S3_BUCKET --delete
+          aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
