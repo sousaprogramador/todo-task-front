@@ -2,12 +2,14 @@ provider "aws" {
   region = "sa-east-1"
 }
 
+# Dados do bucket existente
 data "aws_s3_bucket" "existing_bucket" {
   bucket = "todo-site-sousa-dev"
 }
 
+# Recurso do bucket S3
 resource "aws_s3_bucket" "static_site" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.id != "" ? 0 : 1
   bucket = "todo-site-sousa-dev-unique"
 
   lifecycle {
@@ -15,8 +17,9 @@ resource "aws_s3_bucket" "static_site" {
   }
 }
 
+# Configuração do website para o bucket S3
 resource "aws_s3_bucket_website_configuration" "static_site" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.id != "" ? 0 : 1
   bucket = aws_s3_bucket.static_site[0].bucket
 
   index_document {
@@ -28,8 +31,9 @@ resource "aws_s3_bucket_website_configuration" "static_site" {
   }
 }
 
+# Bloqueio de acesso público para o bucket S3
 resource "aws_s3_bucket_public_access_block" "static_site_public_access" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.id != "" ? 0 : 1
   bucket = aws_s3_bucket.static_site[0].bucket
 
   block_public_acls       = false
@@ -38,8 +42,9 @@ resource "aws_s3_bucket_public_access_block" "static_site_public_access" {
   restrict_public_buckets = false
 }
 
+# Controles de propriedade para o bucket S3
 resource "aws_s3_bucket_ownership_controls" "static_site_ownership" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.id != "" ? 0 : 1
   bucket = aws_s3_bucket.static_site[0].bucket
 
   rule {
@@ -47,8 +52,9 @@ resource "aws_s3_bucket_ownership_controls" "static_site_ownership" {
   }
 }
 
+# Política para o bucket S3
 resource "aws_s3_bucket_policy" "static_site_policy" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.id != "" ? 0 : 1
   bucket = aws_s3_bucket.static_site[0].bucket
   policy = jsonencode({
     Version = "2012-10-17",
@@ -64,8 +70,9 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
   depends_on = [aws_s3_bucket_public_access_block.static_site_public_access]
 }
 
+# Versionamento para o bucket S3
 resource "aws_s3_bucket_versioning" "static_site_versioning" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.id != "" ? 0 : 1
   bucket = aws_s3_bucket.static_site[0].bucket
 
   versioning_configuration {
@@ -73,6 +80,7 @@ resource "aws_s3_bucket_versioning" "static_site_versioning" {
   }
 }
 
+# Outputs
 output "s3_bucket_name" {
   value = data.aws_s3_bucket.existing_bucket.id != "" ? data.aws_s3_bucket.existing_bucket.bucket : aws_s3_bucket.static_site[0].bucket
 }
