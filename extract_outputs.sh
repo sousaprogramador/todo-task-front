@@ -4,9 +4,9 @@
 terraform output -raw s3_bucket_name > s3_bucket_name.txt
 terraform output -raw s3_website_url > s3_website_url.txt
 
-# Capturar e limpar as saídas
-S3_BUCKET=$(head -n 1 s3_bucket_name.txt | tr -d '\r' | tr -d '\n')
-S3_WEBSITE_URL=$(head -n 1 s3_website_url.txt | tr -d '\r' | tr -d '\n')
+# Ler e limpar as saídas
+S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\r' | tr -d '\n')
+S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\r' | tr -d '\n')
 
 # Verificar se as variáveis estão vazias
 if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
