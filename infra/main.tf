@@ -2,23 +2,24 @@ provider "aws" {
   region = "sa-east-1"
 }
 
-data "aws_s3_bucket" "existing_bucket" {
-  bucket = "todo-site-sousa-dev"
-}
-
 resource "aws_s3_bucket" "static_site" {
-  bucket = "todo-site-sousa-dev"
-
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
-  }
+  bucket = "todo-site-sousa-dev-unique"
 
   lifecycle {
     prevent_destroy = true
   }
+}
 
-  depends_on = [data.aws_s3_bucket.existing_bucket]
+resource "aws_s3_bucket_website_configuration" "static_site" {
+  bucket = aws_s3_bucket.static_site.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
+  }
 }
 
 resource "aws_s3_bucket_ownership_controls" "static_site_ownership" {
@@ -53,15 +54,10 @@ resource "aws_s3_bucket_versioning" "static_site_versioning" {
   }
 }
 
-locals {
-  bucket_name = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.bucket : aws_s3_bucket.static_site.bucket
-  website_url = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.website_endpoint : aws_s3_bucket.static_site.website_endpoint
-}
-
 output "s3_bucket_name" {
-  value = local.bucket_name != "" ? local.bucket_name : "Bucket não criado"
+  value = aws_s3_bucket.static_site.bucket
 }
 
 output "s3_website_url" {
-  value = local.website_url != "" ? local.website_url : "Website não configurado"
+  value = aws_s3_bucket_website_configuration.static_site.website_endpoint
 }
