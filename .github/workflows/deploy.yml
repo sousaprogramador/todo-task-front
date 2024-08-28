@@ -36,15 +36,11 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
         
-        # Capture full Terraform outputs
-        FULL_S3_BUCKET=$(terraform output -raw s3_bucket_name)
-        FULL_S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+        # Capture Terraform outputs using awk to filter only the correct lines
+        S3_BUCKET=$(terraform output -raw s3_bucket_name | awk 'NR==1{print $1}')
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | awk 'NR==1{print $1}')
 
-        # Clean up the outputs by removing anything after the actual value
-        S3_BUCKET=$(echo "$FULL_S3_BUCKET" | cut -d' ' -f1)
-        S3_WEBSITE_URL=$(echo "$FULL_S3_WEBSITE_URL" | cut -d' ' -f1)
-
-        # Ensure outputs are not empty
+        # Ensure outputs are not empty and contain no unexpected text
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
           echo "Error extracting Terraform outputs"
           exit 1
