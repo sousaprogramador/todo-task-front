@@ -35,13 +35,16 @@ jobs:
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
+        
+        # Capture Terraform output and remove any extra characters
         S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\r' || echo "ERROR")
         S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\r' || echo "ERROR")
 
-        # Debugging output
+        # Print outputs for debugging
         echo "S3_BUCKET=${S3_BUCKET}"
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
+        # Check for errors and set environment variables
         if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
           echo "Error extracting Terraform outputs"
           exit 1
@@ -51,75 +54,12 @@ jobs:
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
       shell: /usr/bin/bash -e {0}
 
-    - name: Verify Files
-      run: |
-        echo "Verifying files..."
-        ls -l ./infra
-        if [ -f ./infra/s3_bucket_name.txt ] && [ -f ./infra/s3_website_url.txt ]; then
-          echo "Files found."
-        else
-          echo "Error: Files not found."
-          exit 1
-        fi
-
-    - name: Upload Terraform Outputs
-      uses: actions/upload-artifact@v3
-      with:
-        name: terraform-outputs
-        path: |
-          ./infra/s3_bucket_name.txt
-          ./infra/s3_website_url.txt
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: terraform
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Build site
-      run: npm run build
-
-    - name: Download Terraform Outputs
-      uses: actions/download-artifact@v3
-      with:
-        name: terraform-outputs
-
-    - name: Set Environment Variables
-      run: |
-        echo "Setting environment variables..."
-        if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
-          S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\r')
-          S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\r')
-          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
-        else
-          echo "Error: Files not found."
-          exit 1
-        fi
-        echo "S3_BUCKET=${S3_BUCKET}"
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
-
-    - name: Check AWS CLI Version
+    - name: Verify AWS CLI
       run: aws --version
 
     - name: Deploy to S3
       run: |
         echo "Deploying to S3..."
-        if [ -z "$S3_BUCKET" ]; then
-          echo "Error: S3 bucket name not defined."
-          exit 1
-        fi
-        echo "S3_BUCKET: $S3_BUCKET"
         aws s3 sync ./build s3://$S3_BUCKET --delete
         aws s3 website s3://$S3_BUCKET/ --index-document index.html --error-document error.html
       env:
