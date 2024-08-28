@@ -62,13 +62,11 @@ resource "aws_s3_bucket_website_configuration" "static_site_website" {
 }
 
 output "s3_bucket_name" {
-  value       = aws_s3_bucket.static_site[0].bucket
+  value       = data.aws_s3_bucket.existing_bucket.id == "" ? aws_s3_bucket.static_site[0].bucket : data.aws_s3_bucket.existing_bucket.bucket
   description = "O nome do bucket S3"
-  condition   = data.aws_s3_bucket.existing_bucket.id == ""
 }
 
 output "s3_website_url" {
-  value       = aws_s3_bucket.static_site_website[0].website_endpoint
+  value       = data.aws_s3_bucket.existing_bucket.id == "" ? aws_s3_bucket.static_site_website[0].website_endpoint : "O bucket já existe, URL não gerada."
   description = "A URL do site no S3"
-  condition   = data.aws_s3_bucket.existing_bucket.id == ""
 }
