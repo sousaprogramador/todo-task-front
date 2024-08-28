@@ -30,23 +30,31 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform apply -auto-approve
 
-    - name: Extract Terraform Outputs
+    - name: Extract and Clean Terraform Outputs
       id: extract_outputs
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
-        S3_BUCKET=$(terraform output -raw s3_bucket_name)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+        S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '"')
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '"')
+
+        # Ensure outputs are not empty
+        if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
+            echo "Error extracting Terraform outputs"
+            exit 1
+        fi
+
+        # Export variables to environment file
         echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
+
+        # Debug outputs
         echo "S3_BUCKET: $S3_BUCKET"
         echo "S3_WEBSITE_URL: $S3_WEBSITE_URL"
 
     - name: Deploy to S3
       run: |
         echo "Deploying to S3..."
-        echo "S3_BUCKET: $S3_BUCKET"
-        echo "S3_WEBSITE_URL: $S3_WEBSITE_URL"
         aws s3 sync ./build s3://$S3_BUCKET --delete
         aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
       env:
