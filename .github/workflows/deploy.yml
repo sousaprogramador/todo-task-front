@@ -48,6 +48,9 @@ jobs:
         echo "Bucket Name: $S3_BUCKET"
         echo "Website URL: $S3_WEBSITE_URL"
 
+    - name: Verify $GITHUB_ENV content
+      run: cat $GITHUB_ENV
+
   deploy:
     runs-on: ubuntu-latest
     needs: terraform
