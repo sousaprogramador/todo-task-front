@@ -36,7 +36,7 @@ jobs:
       run: |
         S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\n\r')
         S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\n\r')
-        if [ -z "$S3_BUCKET" ]; then
+        if [ -z "$S3_BUCKET" ] || [ "$S3_BUCKET" = "Bucket não criado" ]; then
           echo "Erro: Nome do bucket S3 não definido."
           exit 1
         fi
@@ -66,7 +66,7 @@ jobs:
 
     - name: Deploy to S3
       run: |
-        if [ -z "$S3_BUCKET" ]; then
+        if [ -z "$S3_BUCKET" ] || [ "$S3_BUCKET" = "Bucket não criado" ]; then
           echo "Erro: Nome do bucket S3 não definido."
           exit 1
         fi

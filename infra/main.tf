@@ -4,29 +4,36 @@ provider "aws" {
 
 data "aws_s3_bucket" "existing_bucket" {
   bucket = "todo-site-sousa-dev"
+  # A configuração abaixo impede erros caso o bucket não exista
+  skip_region_validation      = true
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
 }
 
 resource "aws_s3_bucket" "static_site" {
-  count  = data.aws_s3_bucket.existing_bucket.bucket != "" ? 0 : 1
   bucket = "todo-site-sousa-dev"
-}
+  acl    = "public-read"
 
-resource "aws_s3_bucket_website_configuration" "static_site_website" {
-  count  = length(aws_s3_bucket.static_site) > 0 ? 1 : 0
-  bucket = aws_s3_bucket.static_site[0].bucket
-
-  index_document {
-    suffix = "index.html"
+  website {
+    index_document = "index.html"
+    error_document = "error.html"
   }
 
-  error_document {
-    key = "error.html"
+  # Só cria o bucket se ele não existir
+  lifecycle {
+    prevent_destroy = true
   }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "echo 'Não posso destruir este bucket!'; exit 1"
+  }
+
+  depends_on = [data.aws_s3_bucket.existing_bucket]
 }
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
-  count  = length(aws_s3_bucket.static_site) > 0 ? 1 : 0
-  bucket = aws_s3_bucket.static_site[0].bucket
+  bucket = aws_s3_bucket.static_site.bucket
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -34,30 +41,24 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
         Effect    = "Allow",
         Principal = "*",
         Action    = "s3:GetObject",
-        Resource  = "arn:aws:s3:::${aws_s3_bucket.static_site[0].bucket}/*"
+        Resource  = "arn:aws:s3:::${aws_s3_bucket.static_site.bucket}/*"
       }
     ]
   })
 }
 
 resource "aws_s3_bucket_versioning" "static_site_versioning" {
-  count  = length(aws_s3_bucket.static_site) > 0 ? 1 : 0
-  bucket = aws_s3_bucket.static_site[0].bucket
+  bucket = aws_s3_bucket.static_site.bucket
+
   versioning_configuration {
     status = "Enabled"
   }
-  depends_on = [aws_s3_bucket.static_site]
-}
-
-locals {
-  bucket_name = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.bucket : (length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].bucket : "")
-  website_url = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.website_endpoint : (length(aws_s3_bucket_website_configuration) > 0 ? aws_s3_bucket_website_configuration.static_site_website[0].website_endpoint : "")
 }
 
 output "s3_bucket_name" {
-  value = local.bucket_name
+  value = aws_s3_bucket.static_site.bucket
 }
 
 output "s3_website_url" {
-  value = local.website_url
+  value = aws_s3_bucket.static_site.website_endpoint
 }
