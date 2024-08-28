@@ -37,8 +37,8 @@ jobs:
         echo "Extracting Terraform Outputs..."
 
         # Capture Terraform outputs into variables
-        S3_BUCKET=$(terraform output -raw s3_bucket_name)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+        S3_BUCKET=$(terraform output s3_bucket_name)
+        S3_WEBSITE_URL=$(terraform output s3_website_url)
 
         # Ensure outputs are not empty
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
