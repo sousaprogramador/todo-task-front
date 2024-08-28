@@ -34,8 +34,8 @@ jobs:
       id: extract-outputs
       working-directory: ./infra
       run: |
-        terraform output -raw s3_bucket_name > s3_bucket_name.txt
-        terraform output -raw s3_website_url > s3_website_url.txt
+        terraform output s3_bucket_name > s3_bucket_name.txt
+        terraform output s3_website_url > s3_website_url.txt
         echo "Contents of s3_bucket_name.txt:"
         cat s3_bucket_name.txt
         echo "Contents of s3_website_url.txt:"
@@ -44,6 +44,7 @@ jobs:
     - name: Verify Files
       run: |
         echo "Verifying files..."
+        ls -l ./infra
         if [ -f ./infra/s3_bucket_name.txt ] && [ -f ./infra/s3_website_url.txt ]; then
           echo "Files found."
         else
