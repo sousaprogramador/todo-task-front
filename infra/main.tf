@@ -2,12 +2,13 @@ provider "aws" {
   region = "sa-east-1"
 }
 
-data "aws_s3_objects" "existing_bucket" {
+# Verifica se o bucket já existe
+data "aws_s3_bucket" "existing_bucket" {
   bucket = "todo-site-sousa-dev"
 }
 
 resource "aws_s3_bucket" "static_site" {
-  count  = length(data.aws_s3_objects.existing_bucket.keys) == 0 ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.bucket != "" ? 0 : 1
   bucket = "todo-site-sousa-dev"
 
   versioning {
@@ -21,8 +22,8 @@ resource "aws_s3_bucket" "static_site" {
 }
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
-  count  = length(data.aws_s3_objects.existing_bucket.keys) == 0 ? 1 : 0
-  bucket = aws_s3_bucket.static_site[0].bucket
+  count  = data.aws_s3_bucket.existing_bucket.bucket != "" ? 0 : 1
+  bucket = coalesce(aws_s3_bucket.static_site[0].bucket, data.aws_s3_bucket.existing_bucket.bucket)
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -38,8 +39,8 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access_block" {
-  count  = length(data.aws_s3_objects.existing_bucket.keys) == 0 ? 1 : 0
-  bucket = aws_s3_bucket.static_site[0].bucket
+  count  = data.aws_s3_bucket.existing_bucket.bucket != "" ? 0 : 1
+  bucket = coalesce(aws_s3_bucket.static_site[0].bucket, data.aws_s3_bucket.existing_bucket.bucket)
 
   block_public_acls       = false
   block_public_policy     = false
@@ -48,11 +49,11 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 }
 
 output "s3_bucket_name" {
-  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].bucket : "todo-site-sousa-dev"
+  value       = coalesce(data.aws_s3_bucket.existing_bucket.bucket, aws_s3_bucket.static_site[0].bucket)
   description = "O nome do bucket S3"
 }
 
 output "s3_website_url" {
-  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].website_endpoint : "https://todo-site-sousa-dev.s3-website-${var.aws_region}.amazonaws.com"
+  value       = coalesce(data.aws_s3_bucket.existing_bucket.website_endpoint, aws_s3_bucket.static_site[0].website_endpoint)
   description = "A URL do site no S3"
 }
