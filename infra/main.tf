@@ -18,10 +18,6 @@ resource "aws_s3_bucket" "static_site" {
     index_document = "index.html"
     error_document = "error.html"
   }
-
-  object_ownership {
-    rule = "BucketOwnerEnforced"
-  }
 }
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
