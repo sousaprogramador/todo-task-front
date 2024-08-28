@@ -4,15 +4,21 @@ provider "aws" {
 
 resource "aws_s3_bucket" "static_site" {
   bucket = "todo-site-sousa-dev"
-  acl    = "public-read"
 
   versioning {
     enabled = true
   }
+}
 
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
+resource "aws_s3_bucket_website_configuration" "static_site_website" {
+  bucket = aws_s3_bucket.static_site.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
   }
 }
 
@@ -46,6 +52,6 @@ output "s3_bucket_name" {
 }
 
 output "s3_website_url" {
-  value       = aws_s3_bucket.static_site.website_endpoint
+  value       = aws_s3_bucket_website_configuration.static_site_website.website_endpoint
   description = "A URL do site no S3"
 }
