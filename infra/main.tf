@@ -42,11 +42,9 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
 }
 
 output "s3_bucket_name" {
-  value       = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.bucket : aws_s3_bucket.static_site[0].bucket
-  description = "O nome do bucket S3"
+  value = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.bucket : aws_s3_bucket.static_site[0].bucket
 }
 
 output "s3_website_url" {
-  value       = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.website_endpoint : aws_s3_bucket_website_configuration.static_site_website[0].website_endpoint
-  description = "A URL do site no S3"
+  value = data.aws_s3_bucket.existing_bucket.bucket != "" ? data.aws_s3_bucket.existing_bucket.website_endpoint : aws_s3_bucket_website_configuration.static_site_website[0].website_endpoint
 }
