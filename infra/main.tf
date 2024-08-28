@@ -14,14 +14,19 @@ resource "aws_s3_bucket" "static_site" {
     error_document = "error.html"
   }
 
-  object_ownership = "BucketOwnerEnforced"
-
   lifecycle {
     prevent_destroy = true
   }
 
-  # Dependência explícita para evitar criar se já existir
   depends_on = [data.aws_s3_bucket.existing_bucket]
+}
+
+resource "aws_s3_bucket_ownership_controls" "static_site_ownership" {
+  bucket = aws_s3_bucket.static_site.bucket
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
 }
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
@@ -37,6 +42,7 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
       }
     ]
   })
+  depends_on = [aws_s3_bucket_ownership_controls.static_site_ownership]
 }
 
 resource "aws_s3_bucket_versioning" "static_site_versioning" {
