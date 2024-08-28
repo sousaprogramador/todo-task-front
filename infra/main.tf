@@ -4,10 +4,6 @@ provider "aws" {
 
 data "aws_s3_bucket" "existing_bucket" {
   bucket = "todo-site-sousa-dev"
-  # Evita falhas silenciosas se o bucket não existir
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
-  skip_region_validation      = true
 }
 
 resource "aws_s3_bucket" "static_site" {
