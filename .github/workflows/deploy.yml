@@ -30,15 +30,28 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform apply -auto-approve
 
-    - name: Extract Terraform Outputs
+    - name: Extract Terraform Outputs to Temporary File
       id: extract_outputs
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
 
-        # Directly process the Terraform output with jq, no intermediate steps
-        S3_BUCKET=$(terraform output -json | jq -r '.s3_bucket_name.value')
-        S3_WEBSITE_URL=$(terraform output -json | jq -r '.s3_website_url.value')
+        # Capture the output in JSON format directly to a file
+        terraform output -json > tf_output.json
+
+        # Print the JSON content for verification
+        echo "Captured JSON Outputs:"
+        cat tf_output.json
+
+        # Check for unexpected errors in the file
+        if grep -q '^[^{]' tf_output.json; then
+            echo "Error: Unexpected content in Terraform output."
+            exit 1
+        fi
+
+        # Parse the JSON to extract values using jq
+        S3_BUCKET=$(jq -r '.s3_bucket_name.value' tf_output.json)
+        S3_WEBSITE_URL=$(jq -r '.s3_website_url.value' tf_output.json)
 
         # Ensure outputs are not empty and valid
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
