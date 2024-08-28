@@ -26,9 +26,9 @@ jobs:
       id: apply
       working-directory: ./infra
       run: |
-        terraform apply -auto-approve -no-color 2>error.log
-        if [ $? -ne 0 ]; then
-          cat error.log
+        terraform apply -auto-approve -no-color 2>&1 | tee terraform_output.log
+        if [ ${PIPESTATUS[0]} -ne 0 ]; then
+          echo "Terraform apply falhou."
           exit 1
         fi
       env:
@@ -39,8 +39,8 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v2
       with:
-        name: terraform-error-log
-        path: ./infra/error.log
+        name: terraform-output-log
+        path: ./infra/terraform_output.log
 
     - name: Extract Terraform Outputs
       id: outputs
