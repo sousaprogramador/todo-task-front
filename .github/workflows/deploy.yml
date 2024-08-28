@@ -1,4 +1,4 @@
-name: Deploy Site
+name: Deploy to S3
 
 on:
   push:
@@ -8,58 +8,55 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # Check out the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.9.5
 
-      # Initialize Terraform
       - name: Terraform Init
+        working-directory: ./infra
         run: terraform init
-        working-directory: ./infra
 
-      # Apply Terraform configuration
       - name: Terraform Apply
-        run: terraform apply -auto-approve
         working-directory: ./infra
+        run: terraform apply -auto-approve
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: sa-east-1
 
-      # Extract Terraform outputs
       - name: Extract Terraform Outputs
         id: extract_outputs
+        working-directory: ./infra
         run: |
           echo "Extracting Terraform Outputs..."
           S3_BUCKET=$(terraform output -raw s3_bucket_name)
           S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
-          if [ -z "$S3_BUCKET" ] || [ -z "$S3_WEBSITE_URL" ]; then
-            echo "Error: Missing Terraform outputs"
+
+          # Ensure outputs are not empty
+          if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
+            echo "Error extracting Terraform outputs"
             exit 1
           fi
+
+          # Set environment variables for the next step
           echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
           echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
-        working-directory: ./infra
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: sa-east-1
 
-      # Deploy to S3
+          # Debug outputs
+          echo "S3_BUCKET=$S3_BUCKET"
+          echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
+
       - name: Deploy to S3
+        working-directory: ./infra
         run: |
           echo "Deploying to S3..."
           aws s3 sync ./build s3://$S3_BUCKET --delete
           aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
-        working-directory: ./infra
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
