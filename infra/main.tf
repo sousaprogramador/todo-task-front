@@ -3,7 +3,10 @@ provider "aws" {
 }
 
 data "aws_s3_bucket" "existing_bucket" {
-  bucket = "todo-site-sousa-dev"
+  bucket                      = "todo-site-sousa-dev"
+  skip_region_validation      = true
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
 }
 
 resource "aws_s3_bucket" "static_site" {
@@ -23,7 +26,7 @@ resource "aws_s3_bucket" "static_site" {
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
   count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
-  bucket = coalesce(aws_s3_bucket.static_site[0].bucket, data.aws_s3_bucket.existing_bucket.bucket)
+  bucket = aws_s3_bucket.static_site[0].bucket
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -40,7 +43,7 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
 
 resource "aws_s3_bucket_public_access_block" "public_access_block" {
   count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
-  bucket = coalesce(aws_s3_bucket.static_site[0].bucket, data.aws_s3_bucket.existing_bucket.bucket)
+  bucket = aws_s3_bucket.static_site[0].bucket
 
   block_public_acls       = false
   block_public_policy     = false
@@ -49,11 +52,11 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 }
 
 output "s3_bucket_name" {
-  value       = coalesce(data.aws_s3_bucket.existing_bucket.bucket, aws_s3_bucket.static_site[0].bucket)
+  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].bucket : data.aws_s3_bucket.existing_bucket.bucket
   description = "O nome do bucket S3"
 }
 
 output "s3_website_url" {
-  value       = coalesce(data.aws_s3_bucket.existing_bucket.website_endpoint, aws_s3_bucket.static_site[0].website_endpoint)
+  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].website_endpoint : data.aws_s3_bucket.existing_bucket.website_endpoint
   description = "A URL do site no S3"
 }
