@@ -55,6 +55,9 @@ jobs:
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
       shell: bash
 
+    - name: Check AWS CLI version
+      run: aws --version
+
     - name: Deploy to S3
       run: |
         echo "Deploying to S3..."
