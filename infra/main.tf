@@ -3,29 +3,24 @@ provider "aws" {
 }
 
 data "aws_s3_bucket" "existing_bucket" {
-  bucket                      = "todo-site-sousa-dev"
-  skip_region_validation      = true
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
+  bucket = "todo-site-sousa-dev"
 }
 
 resource "aws_s3_bucket" "static_site" {
   bucket = "todo-site-sousa-dev"
 
-  # Configuração do website
   website {
     index_document = "index.html"
     error_document = "error.html"
   }
 
-  # Desativando ACLs, compatível com Object Ownership: BucketOwnerEnforced
   object_ownership = "BucketOwnerEnforced"
 
-  # Previne destruição acidental do bucket
   lifecycle {
     prevent_destroy = true
   }
 
+  # Dependência explícita para evitar criar se já existir
   depends_on = [data.aws_s3_bucket.existing_bucket]
 }
 
