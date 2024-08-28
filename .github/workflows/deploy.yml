@@ -27,29 +27,23 @@ jobs:
       working-directory: ./infra
       run: |
         set -o pipefail
-        terraform apply -auto-approve -no-color | tee terraform_output.log
+        terraform apply -auto-approve -no-color
         if [ $? -ne 0 ]; then
           echo "Terraform apply falhou."
-          cat terraform_output.log
           exit 1
         fi
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-    - name: Upload Terraform Error Log
-      if: failure()
-      uses: actions/upload-artifact@v2
-      with:
-        name: terraform-output-log
-        path: ./infra/terraform_output.log
-
     - name: Extract Terraform Outputs
       id: outputs
       working-directory: ./infra
       run: |
-        echo "s3_bucket_name=$(terraform output -raw s3_bucket_name)" >> $GITHUB_ENV
-        echo "s3_website_url=$(terraform output -raw s3_website_url)" >> $GITHUB_ENV
+        s3_bucket_name=$(terraform output -raw s3_bucket_name | tr -d '\n\r')
+        echo "s3_bucket_name=$s3_bucket_name" >> $GITHUB_ENV
+        s3_website_url=$(terraform output -raw s3_website_url | tr -d '\n\r')
+        echo "s3_website_url=$s3_website_url" >> $GITHUB_ENV
 
   deploy:
     runs-on: ubuntu-latest
