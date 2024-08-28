@@ -36,9 +36,9 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
         
-        # Capture Terraform outputs safely
-        S3_BUCKET=$(terraform output -raw s3_bucket_name | tail -n 1)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tail -n 1)
+        # Capture Terraform outputs and clean them manually
+        S3_BUCKET=$(terraform output -raw s3_bucket_name | grep -oP '^[a-zA-Z0-9.-]+$')
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | grep -oP '^[a-zA-Z0-9.-]+\.s3-website-[a-z0-9-]+\.amazonaws\.com$')
 
         # Ensure outputs are not empty
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
