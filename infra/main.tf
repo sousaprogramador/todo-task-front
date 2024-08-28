@@ -3,14 +3,11 @@ provider "aws" {
 }
 
 data "aws_s3_bucket" "existing_bucket" {
-  bucket                      = "todo-site-sousa-dev"
-  skip_region_validation      = true
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
+  bucket = "todo-site-sousa-dev"
 }
 
 resource "aws_s3_bucket" "static_site" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.bucket == "" ? 1 : 0
   bucket = "todo-site-sousa-dev"
   acl    = "public-read"
 
@@ -25,7 +22,7 @@ resource "aws_s3_bucket" "static_site" {
 }
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.bucket == "" ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
   policy = jsonencode({
     Version = "2012-10-17",
@@ -42,7 +39,7 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access_block" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  count  = data.aws_s3_bucket.existing_bucket.bucket == "" ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
 
   block_public_acls       = false
