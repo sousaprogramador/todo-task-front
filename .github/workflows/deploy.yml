@@ -36,17 +36,26 @@ jobs:
       run: |
         echo "Saving Terraform Outputs to File..."
         terraform output -json > terraform_outputs.json
-        cat terraform_outputs.json
+        cat terraform_outputs.json  # Verifica o conteúdo do arquivo
+
+    - name: List Files in Directory
+      id: list_files
+      run: ls -la ./infra  # Verifica a presença do arquivo no diretório
 
     - name: Extract Outputs from File
       id: extract_outputs
       run: |
         echo "Extracting Outputs from File..."
-        S3_BUCKET=$(jq -r '.s3_bucket_name.value' terraform_outputs.json)
-        S3_WEBSITE_URL=$(jq -r '.s3_website_url.value' terraform_outputs.json)
+        if [ -f terraform_outputs.json ]; then
+          S3_BUCKET=$(jq -r '.s3_bucket_name.value' terraform_outputs.json)
+          S3_WEBSITE_URL=$(jq -r '.s3_website_url.value' terraform_outputs.json)
 
-        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+        else
+          echo "Error: terraform_outputs.json file not found."
+          exit 1
+        fi
 
     - name: Deploy to S3
       run: |
