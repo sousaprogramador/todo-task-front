@@ -35,8 +35,8 @@ jobs:
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
-        S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '"')
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '"')
+        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null | sed 's/::debug::.*//')
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null | sed 's/::debug::.*//')
 
         # Ensure outputs are not empty
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
@@ -44,17 +44,19 @@ jobs:
             exit 1
         fi
 
+        # Print outputs for debugging
+        echo "S3_BUCKET: $S3_BUCKET"
+        echo "S3_WEBSITE_URL: $S3_WEBSITE_URL"
+
         # Export variables to environment file
         echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
 
-        # Debug outputs
-        echo "S3_BUCKET: $S3_BUCKET"
-        echo "S3_WEBSITE_URL: $S3_WEBSITE_URL"
-
     - name: Deploy to S3
       run: |
         echo "Deploying to S3..."
+        echo "S3_BUCKET: $S3_BUCKET"
+        echo "S3_WEBSITE_URL: $S3_WEBSITE_URL"
         aws s3 sync ./build s3://$S3_BUCKET --delete
         aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
       env:
