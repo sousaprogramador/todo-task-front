@@ -37,21 +37,10 @@ jobs:
         echo "Extracting Terraform Outputs..."
         terraform output -raw s3_bucket_name > s3_bucket_name.txt
         terraform output -raw s3_website_url > s3_website_url.txt
-        echo "Contents of s3_bucket_name.txt:"
+        echo "S3 Bucket Name:"
         cat s3_bucket_name.txt
-        echo "Contents of s3_website_url.txt:"
+        echo "S3 Website URL:"
         cat s3_website_url.txt
-
-    - name: Verify Files
-      run: |
-        echo "Verifying files..."
-        ls -l ./infra
-        if [ -f ./infra/s3_bucket_name.txt ] && [ -f ./infra/s3_website_url.txt ]; then
-          echo "Files found."
-        else
-          echo "Error: Files not found."
-          exit 1
-        fi
 
     - name: Upload Terraform Outputs
       uses: actions/upload-artifact@v3
