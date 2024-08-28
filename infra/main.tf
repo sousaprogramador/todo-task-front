@@ -1,17 +1,56 @@
 provider "aws" {
-  region = var.aws_region
+  region = "sa-east-1"
+}
+
+data "aws_s3_bucket" "existing_bucket" {
+  bucket = "todo-site-sousa-dev"
 }
 
 resource "aws_s3_bucket" "static_site" {
-  bucket = var.s3_bucket_name
+  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  bucket = "todo-site-sousa-dev"
+  acl    = "public-read"
 
   versioning {
     enabled = true
   }
+
+  website {
+    index_document = "index.html"
+    error_document = "error.html"
+  }
+}
+
+resource "aws_s3_bucket_policy" "static_site_policy" {
+  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  bucket = aws_s3_bucket.static_site[0].bucket
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect    = "Allow",
+        Principal = "*",
+        Action    = "s3:GetObject",
+        Resource  = "arn:aws:s3:::todo-site-sousa-dev/*"
+      }
+    ]
+  })
+  depends_on = [aws_s3_bucket.static_site]
+}
+
+resource "aws_s3_bucket_public_access_block" "public_access_block" {
+  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  bucket = aws_s3_bucket.static_site[0].bucket
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
 }
 
 resource "aws_s3_bucket_website_configuration" "static_site_website" {
-  bucket = aws_s3_bucket.static_site.bucket
+  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
+  bucket = aws_s3_bucket.static_site[0].bucket
 
   index_document {
     suffix = "index.html"
@@ -22,37 +61,14 @@ resource "aws_s3_bucket_website_configuration" "static_site_website" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "public_access_block" {
-  bucket = aws_s3_bucket.static_site.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-resource "aws_s3_bucket_policy" "static_site_policy" {
-  bucket = aws_s3_bucket.static_site.bucket
-
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::${aws_s3_bucket.static_site.bucket}/*"
-    }
-  ]
-}
-POLICY
-}
-
 output "s3_bucket_name" {
-  value = aws_s3_bucket.static_site.bucket
+  value       = aws_s3_bucket.static_site[0].bucket
+  description = "O nome do bucket S3"
+  condition   = data.aws_s3_bucket.existing_bucket.id == ""
 }
 
 output "s3_website_url" {
-  value = aws_s3_bucket_website_configuration.static_site_website.website_domain
+  value       = aws_s3_bucket.static_site_website[0].website_endpoint
+  description = "A URL do site no S3"
+  condition   = data.aws_s3_bucket.existing_bucket.id == ""
 }
