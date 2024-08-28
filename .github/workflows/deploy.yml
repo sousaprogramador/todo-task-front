@@ -1,4 +1,4 @@
-name: Deploy to S3
+name: Deploy Static Site to S3
 
 on:
   push:
@@ -6,45 +6,63 @@ on:
       - main
 
 jobs:
-  deploy:
+  terraform:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
 
-    - name: Set up Terraform
+    - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_version: 1.9.5
 
     - name: Terraform Init
-      run: |
-        terraform init -chdir=infra
-
-    - name: Terraform Plan
-      run: |
-        terraform plan -chdir=infra
+      working-directory: ./infra
+      run: terraform init
 
     - name: Terraform Apply
-      run: |
-        terraform apply -auto-approve -chdir=infra
-
-    - name: Extract Terraform Outputs
-      id: terraform_outputs
-      run: |
-        echo "Extracting Terraform Outputs..."
-        S3_BUCKET=$(terraform output -raw s3_bucket_name -chdir=infra)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url -chdir=infra)
-        echo "S3_BUCKET=${S3_BUCKET}"
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
-        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
-
-    - name: Deploy static site to S3
-      run: |
-        aws s3 sync build s3://${{ env.S3_BUCKET }} --delete
+      id: apply
+      working-directory: ./infra
+      run: terraform apply -auto-approve -no-color
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: sa-east-1
+
+    - name: Extract Terraform Outputs
+      id: extract-outputs
+      working-directory: ./infra
+      run: |
+        echo "Extracting Terraform Outputs..."
+        
+        # Capture Terraform output
+        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "ERROR")
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null || echo "ERROR")
+
+        # Print outputs for debugging
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
+
+        # Check for errors and set environment variables
+        if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
+          echo "Error extracting Terraform outputs"
+          exit 1
+        fi
+
+        # Ensure environment variables are correctly formatted
+        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Deploy to S3
+      run: |
+        echo "Deploying to S3..."
+        aws s3 sync ./build s3://$S3_BUCKET --delete
+        aws s3 website s3://$S3_BUCKET/ --index-document index.html --error-document error.html
+      env:
+        AWS_REGION: "sa-east-1"
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        S3_BUCKET: ${{ env.S3_BUCKET }}
+        S3_WEBSITE_URL: ${{ env.S3_WEBSITE_URL }}
