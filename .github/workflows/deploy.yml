@@ -35,7 +35,7 @@ jobs:
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
-
+        
         # Capture Terraform output
         S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "ERROR")
         S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null || echo "ERROR")
