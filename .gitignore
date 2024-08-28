@@ -21,3 +21,15 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Terraform
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+
+# Terraform variable files
+terraform.tfvars
+
+# Diretórios do build
+build/
+node_modules/
