@@ -26,10 +26,21 @@ jobs:
       id: apply
       working-directory: ./infra
       run: |
-        terraform apply -auto-approve -no-color || echo "Terraform apply falhou"
+        terraform apply -auto-approve -no-color 2>error.log
+        if [ $? -ne 0 ]; then
+          cat error.log
+          exit 1
+        fi
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    - name: Upload Terraform Error Log
+      if: failure()
+      uses: actions/upload-artifact@v2
+      with:
+        name: terraform-error-log
+        path: ./infra/error.log
 
     - name: Extract Terraform Outputs
       id: outputs
