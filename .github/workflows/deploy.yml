@@ -26,9 +26,11 @@ jobs:
       id: apply
       working-directory: ./infra
       run: |
-        terraform apply -auto-approve -no-color 2>&1 | tee terraform_output.log
-        if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        set -o pipefail
+        terraform apply -auto-approve -no-color | tee terraform_output.log
+        if [ $? -ne 0 ]; then
           echo "Terraform apply falhou."
+          cat terraform_output.log
           exit 1
         fi
       env:
