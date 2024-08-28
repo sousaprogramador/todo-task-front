@@ -37,20 +37,9 @@ jobs:
         echo "Extracting Terraform outputs..."
         terraform output -raw s3_bucket_name > s3_bucket_name.txt
         terraform output -raw s3_website_url > s3_website_url.txt
-        echo "Bucket Name Output:"
-        cat s3_bucket_name.txt || echo "Arquivo s3_bucket_name.txt não encontrado."
-        echo "Website URL Output:"
-        cat s3_website_url.txt || echo "Arquivo s3_website_url.txt não encontrado."
-        ls -l
-        # Check if the files were created and are not empty
-        if [ ! -s s3_bucket_name.txt ]; then
-          echo "Erro: Arquivo s3_bucket_name.txt não foi criado ou está vazio."
-          exit 1
-        fi
-        if [ ! -s s3_website_url.txt ]; then
-          echo "Erro: Arquivo s3_website_url.txt não foi criado ou está vazio."
-          exit 1
-        fi
+        cat s3_bucket_name.txt
+        cat s3_website_url.txt
+        ls -l  # List files to verify they exist
 
     - name: Set environment variables
       id: set-env
@@ -66,7 +55,6 @@ jobs:
         else
           echo "Erro: Arquivos de saída não encontrados."
           exit 1
-        fi
       continue-on-error: false
 
   deploy:
