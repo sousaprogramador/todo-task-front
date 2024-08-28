@@ -40,7 +40,7 @@ jobs:
         cat s3_bucket_name.txt
         cat s3_website_url.txt
         if [ ! -s s3_bucket_name.txt ] || [ ! -s s3_website_url.txt ]; then
-          echo "Erro: Arquivos de saída estão vazios."
+          echo "Erro: Arquivos de saída estão vazios ou não foram criados."
           exit 1
         fi
 
@@ -48,12 +48,8 @@ jobs:
       id: set-env
       run: |
         if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
-          S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')
-          S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')
-          echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
-          echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
-          echo "S3_BUCKET=$S3_BUCKET"
-          echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
+          echo "S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')" >> $GITHUB_ENV
         else
           echo "Erro: Arquivos de saída não encontrados."
           exit 1
