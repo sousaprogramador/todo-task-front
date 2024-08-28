@@ -20,38 +20,29 @@ jobs:
 
     - name: Terraform Init
       run: |
-        cd infra
-        terraform init
+        terraform init -chdir=infra
 
     - name: Terraform Plan
       run: |
-        cd infra
-        terraform plan
+        terraform plan -chdir=infra
 
     - name: Terraform Apply
       run: |
-        cd infra
-        terraform apply -auto-approve
+        terraform apply -auto-approve -chdir=infra
 
     - name: Extract Terraform Outputs
       id: terraform_outputs
       run: |
-        cd infra
         echo "Extracting Terraform Outputs..."
-        S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\r' || echo "ERROR")
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\r' || echo "ERROR")
+        S3_BUCKET=$(terraform output -raw s3_bucket_name -chdir=infra)
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url -chdir=infra)
         echo "S3_BUCKET=${S3_BUCKET}"
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
-        if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
-          echo "Error extracting Terraform outputs"
-          exit 1
-        fi
         echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
 
     - name: Deploy static site to S3
       run: |
-        echo "Deploying to S3..."
         aws s3 sync build s3://${{ env.S3_BUCKET }} --delete
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
