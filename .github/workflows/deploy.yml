@@ -30,20 +30,10 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform apply -auto-approve
 
-    - name: Extract Terraform Outputs
-      id: extract_outputs
-      working-directory: ./infra
+    - name: Set Environment Variables
       run: |
-        echo "Extracting Terraform Outputs..."
-        S3_BUCKET=$(terraform output s3_bucket_name | sed 's/"//g')
-        S3_WEBSITE_URL=$(terraform output s3_website_url | sed 's/"//g' )
-
-        echo "S3_BUCKET=${S3_BUCKET}"
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
-
-        # Salvando variáveis de ambiente para etapas posteriores
-        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+        echo "S3_BUCKET=todo-site-sousa-dev" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=todo-site-sousa-dev.s3-website-sa-east-1.amazonaws.com" >> $GITHUB_ENV
 
     - name: Deploy to S3
       run: |
