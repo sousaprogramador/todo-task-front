@@ -31,28 +31,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     - name: Extract Terraform Outputs
-      id: extract-outputs
-      working-directory: ./infra
-      run: |
-        echo "Extracting Terraform Outputs..."
-
-        # Capture Terraform outputs into a temporary variable
-        export S3_BUCKET=$(terraform output -raw s3_bucket_name)
-        export S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
-
-        # Ensure outputs are not empty
-        if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
-          echo "Error extracting Terraform outputs"
-          exit 1
-        fi
-
-        # Set environment variables for the next steps
-        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
-
-        # Debug output for confirmation
-        echo "S3_BUCKET=${S3_BUCKET}"
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
+      run: bash ./extract_outputs.sh
       shell: bash
 
     - name: Deploy to S3
