@@ -17,3 +17,4 @@ echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
 # Confirmar saída limpa
 echo "S3_BUCKET=$S3_BUCKET"
 echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
+
