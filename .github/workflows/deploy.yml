@@ -38,12 +38,12 @@ jobs:
           S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
 
           # Ensure outputs are not empty
-          if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
+          if [ -z "$S3_BUCKET" ] || [ -z "$S3_WEBSITE_URL" ]; then
             echo "Error extracting Terraform outputs"
             exit 1
           fi
 
-          # Set environment variables for the next step
+          # Export variables to environment file
           echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
           echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
 
