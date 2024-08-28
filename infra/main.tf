@@ -2,15 +2,13 @@ provider "aws" {
   region = "sa-east-1"
 }
 
-# Verifica se o bucket já existe
-data "aws_s3_bucket_objects" "existing_bucket" {
+data "aws_s3_objects" "existing_bucket" {
   bucket = "todo-site-sousa-dev"
 }
 
 resource "aws_s3_bucket" "static_site" {
-  count  = length(data.aws_s3_bucket_objects.existing_bucket.keys) == 0 ? 1 : 0
+  count  = length(data.aws_s3_objects.existing_bucket.keys) == 0 ? 1 : 0
   bucket = "todo-site-sousa-dev"
-  acl    = "public-read"
 
   versioning {
     enabled = true
@@ -20,10 +18,14 @@ resource "aws_s3_bucket" "static_site" {
     index_document = "index.html"
     error_document = "error.html"
   }
+
+  object_ownership {
+    rule = "BucketOwnerEnforced"
+  }
 }
 
 resource "aws_s3_bucket_policy" "static_site_policy" {
-  count  = length(data.aws_s3_bucket_objects.existing_bucket.keys) == 0 ? 1 : 0
+  count  = length(data.aws_s3_objects.existing_bucket.keys) == 0 ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
   policy = jsonencode({
     Version = "2012-10-17",
@@ -40,7 +42,7 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access_block" {
-  count  = length(data.aws_s3_bucket_objects.existing_bucket.keys) == 0 ? 1 : 0
+  count  = length(data.aws_s3_objects.existing_bucket.keys) == 0 ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
 
   block_public_acls       = false
@@ -55,6 +57,6 @@ output "s3_bucket_name" {
 }
 
 output "s3_website_url" {
-  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].website_endpoint : "https://${aws_s3_bucket.static_site[0].bucket}.s3-website-${var.aws_region}.amazonaws.com"
+  value       = length(aws_s3_bucket.static_site) > 0 ? aws_s3_bucket.static_site[0].website_endpoint : "https://todo-site-sousa-dev.s3-website-${var.aws_region}.amazonaws.com"
   description = "A URL do site no S3"
 }
