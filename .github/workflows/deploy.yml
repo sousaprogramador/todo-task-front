@@ -3,46 +3,50 @@ name: Deploy to S3
 on:
   push:
     branches:
-      - main  
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v2
       with:
-        terraform_version: 1.9.5  
+        terraform_version: 1.9.5
 
     - name: Terraform Init
-      run: terraform init ./infra
+      run: terraform init -chdir=./infra
 
     - name: Terraform Plan
-      run: terraform plan ./infra
+      run: terraform plan -chdir=./infra
 
     - name: Terraform Apply
-      run: terraform apply -auto-approve ./infra
+      run: terraform apply -auto-approve -chdir=./infra
 
-    - name: Upload Static Website to S3
+    - name: Extract Terraform Outputs
+      id: terraform_outputs
       run: |
-        aws s3 sync ./path-to-your-static-site s3://$(terraform output -raw s3_bucket_name) --delete
+        echo "Extracting Terraform Outputs..."
+        S3_BUCKET=$(terraform output -raw s3_bucket_name -chdir=./infra | tr -d '\r' || echo "ERROR")
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url -chdir=./infra | tr -d '\r' || echo "ERROR")
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
+        if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
+          echo "Error extracting Terraform outputs"
+          exit 1
+        fi
+        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+
+    - name: Deploy static site to S3
+      run: |
+        echo "Deploying to S3..."
+        aws s3 sync build s3://${{ env.S3_BUCKET }} --delete
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: sa-east-1
-
-    - name: Output Terraform values
-      run: |
-        echo "S3_BUCKET=$(terraform output -raw s3_bucket_name)" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=$(terraform output -raw s3_website_url)" >> $GITHUB_ENV
-      env:
-        TERRAFORM_CLI_PATH: /home/runner/work/_temp/${{ github.run_id }}/terraform-bin
-
-    - name: Display Terraform outputs
-      run: |
-        echo "S3_BUCKET=${{ env.S3_BUCKET }}"
-        echo "S3_WEBSITE_URL=${{ env.S3_WEBSITE_URL }}"
+        AWS_REGION: sa-east-1
