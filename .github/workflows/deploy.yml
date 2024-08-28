@@ -37,17 +37,23 @@ jobs:
         echo "Extracting Terraform outputs..."
         S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\n\r')
         S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\n\r')
-        echo "S3_BUCKET=$S3_BUCKET" >> output.env
+        echo "S3_BUCKET=$S3_BUCKET" > output.env
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> output.env
         cat output.env
 
     - name: Read outputs to environment variables
+      id: read_env
       run: |
-        source output.env
-        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
-        echo "S3_BUCKET=${S3_BUCKET}"
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
+        if [ -f output.env ]; then
+          source output.env
+          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+          echo "S3_BUCKET=${S3_BUCKET}"
+          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
+        else
+          echo "Erro: output.env não encontrado."
+          exit 1
+      continue-on-error: true
 
   deploy:
     runs-on: ubuntu-latest
