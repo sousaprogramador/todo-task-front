@@ -35,9 +35,12 @@ jobs:
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
-        # Extraíndo os valores diretamente do terraform output
-        S3_BUCKET=$(terraform output -raw s3_bucket_name)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+        terraform output -json > terraform_outputs.json
+        cat terraform_outputs.json
+
+        # Usando jq para extrair os valores
+        S3_BUCKET=$(jq -r '.s3_bucket_name.value' terraform_outputs.json)
+        S3_WEBSITE_URL=$(jq -r '.s3_website_url.value' terraform_outputs.json)
 
         # Exibindo para depuração
         echo "S3_BUCKET=${S3_BUCKET}"
