@@ -17,20 +17,23 @@ jobs:
         with:
           terraform_version: 1.9.5
 
+      - name: Check Terraform version
+        run: terraform version
+
       - name: Terraform Init
-        run: terraform init ./infra
+        run: terraform init -chdir=./infra
 
       - name: Terraform Plan
-        run: terraform plan ./infra
+        run: terraform plan -chdir=./infra
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve ./infra
+        run: terraform apply -auto-approve -chdir=./infra
 
       - name: Extract Terraform Outputs
         run: |
           echo "Extracting Terraform Outputs..."
-          S3_BUCKET=$(terraform output -raw s3_bucket_name || echo "ERROR")
-          S3_WEBSITE_URL=$(terraform output -raw s3_website_url || echo "ERROR")
+          S3_BUCKET=$(terraform output -raw s3_bucket_name -chdir=./infra || echo "ERROR")
+          S3_WEBSITE_URL=$(terraform output -raw s3_website_url -chdir=./infra || echo "ERROR")
           if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
             echo "Error extracting Terraform outputs"
             exit 1
