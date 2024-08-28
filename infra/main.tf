@@ -48,25 +48,12 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
   restrict_public_buckets = false
 }
 
-resource "aws_s3_bucket_website_configuration" "static_site_website" {
-  count  = data.aws_s3_bucket.existing_bucket.id == "" ? 1 : 0
-  bucket = aws_s3_bucket.static_site[0].bucket
-
-  index_document {
-    suffix = "index.html"
-  }
-
-  error_document {
-    key = "error.html"
-  }
-}
-
 output "s3_bucket_name" {
   value       = data.aws_s3_bucket.existing_bucket.id == "" ? aws_s3_bucket.static_site[0].bucket : data.aws_s3_bucket.existing_bucket.bucket
   description = "O nome do bucket S3"
 }
 
 output "s3_website_url" {
-  value       = data.aws_s3_bucket.existing_bucket.id == "" ? aws_s3_bucket.static_site_website[0].website_endpoint : "O bucket já existe, URL não gerada."
+  value       = data.aws_s3_bucket.existing_bucket.id == "" ? aws_s3_bucket.static_site[0].website_endpoint : "O bucket já existe, URL não gerada."
   description = "A URL do site no S3"
 }
