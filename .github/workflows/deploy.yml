@@ -99,6 +99,9 @@ jobs:
         echo "S3_BUCKET=${S3_BUCKET}"
         echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
+    - name: Check AWS CLI Version
+      run: aws --version
+
     - name: Deploy to S3
       run: |
         echo "Deploying to S3..."
@@ -106,6 +109,7 @@ jobs:
           echo "Error: S3 bucket name not defined."
           exit 1
         fi
+        echo "S3_BUCKET: $S3_BUCKET"
         aws s3 sync ./build s3://$S3_BUCKET --delete
         aws s3 website s3://$S3_BUCKET/ --index-document index.html --error-document error.html
       env:
