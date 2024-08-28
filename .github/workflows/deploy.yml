@@ -16,7 +16,7 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
-        terraform_version: 1.1.6
+        terraform_version: 1.9.5
 
     - name: Terraform Init
       working-directory: ./infra
@@ -34,31 +34,28 @@ jobs:
       id: extract-outputs
       working-directory: ./infra
       run: |
-        terraform output s3_bucket_name > s3_bucket_name.txt
-        terraform output s3_website_url > s3_website_url.txt
+        terraform output -raw s3_bucket_name > s3_bucket_name.txt
+        terraform output -raw s3_website_url > s3_website_url.txt
         echo "Contents of s3_bucket_name.txt:"
         cat s3_bucket_name.txt
         echo "Contents of s3_website_url.txt:"
         cat s3_website_url.txt
 
-    - name: Verify Files
+    - name: Set Environment Variables
+      id: set-env
       run: |
-        echo "Verifying files..."
-        ls -l ./infra
-        if [ -f ./infra/s3_bucket_name.txt ] && [ -f ./infra/s3_website_url.txt ]; then
-          echo "Files found."
+        echo "Setting environment variables..."
+        if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
+          S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')
+          S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')
+          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
         else
-          echo "Error: Files not found."
+          echo "Erro: Arquivos de saída não encontrados."
           exit 1
         fi
-
-    - name: Upload Terraform Outputs
-      uses: actions/upload-artifact@v3
-      with:
-        name: terraform-outputs
-        path: |
-          ./infra/s3_bucket_name.txt
-          ./infra/s3_website_url.txt
+        echo "S3_BUCKET=${S3_BUCKET}"
+        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
 
   deploy:
     runs-on: ubuntu-latest
@@ -79,31 +76,11 @@ jobs:
     - name: Build site
       run: npm run build
 
-    - name: Download Terraform Outputs
-      uses: actions/download-artifact@v3
-      with:
-        name: terraform-outputs
-
-    - name: Set Environment Variables
-      run: |
-        echo "Setting environment variables..."
-        if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
-          S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')
-          S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')
-          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-          echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
-        else
-          echo "Error: Files not found."
-          exit 1
-        fi
-        echo "S3_BUCKET=${S3_BUCKET}"
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}"
-
     - name: Deploy to S3
       run: |
         echo "Deploying to S3..."
         if [ -z "$S3_BUCKET" ]; then
-          echo "Error: S3 bucket name not defined."
+          echo "Erro: Nome do bucket S3 não definido."
           exit 1
         fi
         aws s3 sync ./build s3://$S3_BUCKET --delete
