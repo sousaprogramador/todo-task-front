@@ -37,18 +37,18 @@ jobs:
         echo "Extracting Terraform Outputs..."
         
         # Capture Terraform output
-        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "ERROR")
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null || echo "ERROR")
+        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null)
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null)
 
-        # Check for errors and set outputs
-        if [ "$S3_BUCKET" == "ERROR" ] || [ "$S3_WEBSITE_URL" == "ERROR" ]; then
+        # Verifica se as variáveis foram definidas corretamente
+        if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
           echo "Error extracting Terraform outputs"
           exit 1
         fi
 
         # Set environment variables for the next step
-        echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
-        echo "S3_WEBSITE_URL=${S3_WEBSITE_URL}" >> $GITHUB_ENV
+        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
       shell: bash
 
     - name: Deploy to S3
