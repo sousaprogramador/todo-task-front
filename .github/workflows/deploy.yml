@@ -36,9 +36,9 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
         
-        # Capture Terraform outputs
-        S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url 2>/dev/null)
+        # Capture Terraform outputs directly to variables
+        S3_BUCKET=$(terraform output -raw s3_bucket_name)
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
 
         # Ensure outputs are not empty
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
@@ -46,15 +46,11 @@ jobs:
           exit 1
         fi
 
-        # Strip any potential debug info
-        S3_BUCKET=$(echo "$S3_BUCKET" | grep -o '^[^:]*')
-        S3_WEBSITE_URL=$(echo "$S3_WEBSITE_URL" | grep -o '^[^:]*')
-
         # Set environment variables for the next step
         echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
 
-        # Print outputs for debugging
+        # Debug outputs
         echo "S3_BUCKET=$S3_BUCKET"
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
       shell: bash
