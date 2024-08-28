@@ -37,7 +37,9 @@ jobs:
         echo "Extracting Terraform outputs..."
         terraform output -raw s3_bucket_name > s3_bucket_name.txt
         terraform output -raw s3_website_url > s3_website_url.txt
+        echo "Bucket Name Output:"
         cat s3_bucket_name.txt
+        echo "Website URL Output:"
         cat s3_website_url.txt
         if [ ! -s s3_bucket_name.txt ] || [ ! -s s3_website_url.txt ]; then
           echo "Erro: Arquivos de saída estão vazios ou não foram criados."
@@ -47,13 +49,16 @@ jobs:
     - name: Set environment variables
       id: set-env
       run: |
+        echo "Setting environment variables..."
         if [ -f s3_bucket_name.txt ] && [ -f s3_website_url.txt ]; then
           echo "S3_BUCKET=$(cat s3_bucket_name.txt | tr -d '\n')" >> $GITHUB_ENV
           echo "S3_WEBSITE_URL=$(cat s3_website_url.txt | tr -d '\n')" >> $GITHUB_ENV
+          echo "S3_BUCKET=${{ env.S3_BUCKET }}"
+          echo "S3_WEBSITE_URL=${{ env.S3_WEBSITE_URL }}"
         else
           echo "Erro: Arquivos de saída não encontrados."
           exit 1
-      continue-on-error: true
+      continue-on-error: false
 
   deploy:
     runs-on: ubuntu-latest
