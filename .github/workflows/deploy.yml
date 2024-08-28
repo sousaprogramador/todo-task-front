@@ -18,18 +18,6 @@ jobs:
       with:
         terraform_version: 1.1.6
 
-    - name: Check if S3 bucket exists
-      id: check_bucket
-      run: |
-        if aws s3api head-bucket --bucket "meu-bucket-existente" 2>/dev/null; then
-          echo "bucket_exists=true" >> $GITHUB_ENV
-        else
-          echo "bucket_exists=false" >> $GITHUB_ENV
-        fi
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
     - name: Terraform Init
       working-directory: ./infra
       run: terraform init
@@ -38,11 +26,7 @@ jobs:
       id: apply
       working-directory: ./infra
       run: |
-        if [ "$bucket_exists" = "false" ]; then
-          terraform apply -auto-approve -no-color
-        else
-          echo "Bucket já existe, pulando criação."
-        fi
+        terraform apply -auto-approve -no-color
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -51,10 +35,12 @@ jobs:
       id: outputs
       working-directory: ./infra
       run: |
-        s3_bucket_name=$(terraform output -raw s3_bucket_name | tr -d '\n\r')
-        echo "s3_bucket_name=$s3_bucket_name" >> $GITHUB_ENV
-        s3_website_url=$(terraform output -raw s3_website_url | tr -d '\n\r')
-        echo "s3_website_url=$s3_website_url" >> $GITHUB_ENV
+        S3_BUCKET=$(terraform output -raw s3_bucket_name)
+        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
+        echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
+        echo "Bucket Name: $S3_BUCKET"
+        echo "Website URL: $S3_WEBSITE_URL"
 
   deploy:
     runs-on: ubuntu-latest
@@ -69,14 +55,6 @@ jobs:
       with:
         node-version: '14'
 
-    - name: Cache Node.js modules
-      uses: actions/cache@v2
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-
     - name: Install dependencies
       run: npm install
 
@@ -84,15 +62,15 @@ jobs:
       run: npm run build
 
     - name: Deploy to S3
-      env:
-        AWS_REGION: "sa-east-1"
-        S3_BUCKET: ${{ env.s3_bucket_name }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: |
+        if [ -z "$S3_BUCKET" ]; then
+          echo "Erro: Nome do bucket S3 não definido."
+          exit 1
+        fi
         aws s3 sync ./build s3://$S3_BUCKET --delete
         aws s3 website s3://$S3_BUCKET/ --index-document index.html --error-document error.html
-
-    - name: Verify S3 Website
-      run: |
-        curl -I ${{ env.s3_website_url }}
+      env:
+        AWS_REGION: "sa-east-1"
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        S3_BUCKET: ${{ env.S3_BUCKET }}
