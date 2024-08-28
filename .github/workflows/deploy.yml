@@ -25,8 +25,7 @@ jobs:
     - name: Terraform Apply
       id: apply
       working-directory: ./infra
-      run: |
-        terraform apply -auto-approve -no-color
+      run: terraform apply -auto-approve -no-color
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -37,6 +36,10 @@ jobs:
       run: |
         S3_BUCKET=$(terraform output -raw s3_bucket_name | tr -d '\n\r')
         S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\n\r')
+        if [ -z "$S3_BUCKET" ]; then
+          echo "Erro: Nome do bucket S3 não definido."
+          exit 1
+        fi
         echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
         echo "Bucket Name: $S3_BUCKET"
