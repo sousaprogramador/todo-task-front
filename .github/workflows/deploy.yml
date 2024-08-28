@@ -30,40 +30,32 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform apply -auto-approve
 
-    - name: Extract Terraform Outputs to Temporary File
+    - name: Extract Terraform Outputs
       id: extract_outputs
       working-directory: ./infra
       run: |
         echo "Extracting Terraform Outputs..."
 
-        # Capture the output in JSON format directly to a file
-        terraform output -json > tf_output.json
+        # Captura direta do JSON com isolamento
+        JSON_OUTPUT=$(terraform output -json 2>/dev/null)
 
-        # Print the JSON content for verification
-        echo "Captured JSON Outputs:"
-        cat tf_output.json
-
-        # Check for unexpected errors in the file
-        if grep -q '^[^{]' tf_output.json; then
-            echo "Error: Unexpected content in Terraform output."
-            exit 1
+        # Verifica se JSON foi capturado corretamente
+        if ! echo "$JSON_OUTPUT" | jq empty; then
+          echo "Erro: O output do Terraform não é um JSON válido."
+          exit 1
         fi
 
-        # Parse the JSON to extract values using jq
-        S3_BUCKET=$(jq -r '.s3_bucket_name.value' tf_output.json)
-        S3_WEBSITE_URL=$(jq -r '.s3_website_url.value' tf_output.json)
+        # Extrai valores usando jq
+        S3_BUCKET=$(echo "$JSON_OUTPUT" | jq -r '.s3_bucket_name.value')
+        S3_WEBSITE_URL=$(echo "$JSON_OUTPUT" | jq -r '.s3_website_url.value')
 
-        # Ensure outputs are not empty and valid
+        # Verifica se os valores extraídos são válidos
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
-            echo "Error: One or both outputs are empty or invalid."
+            echo "Erro: Um ou ambos os outputs estão vazios ou inválidos."
             exit 1
         fi
 
-        # Print the captured values to verify they are correct
-        echo "S3_BUCKET: $S3_BUCKET"
-        echo "S3_WEBSITE_URL: $S3_WEBSITE_URL"
-
-        # Set the environment variables
+        # Define variáveis de ambiente para uso posterior
         echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
 
