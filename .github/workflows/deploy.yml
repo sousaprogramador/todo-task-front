@@ -25,8 +25,7 @@ jobs:
     - name: Terraform Apply
       id: apply
       working-directory: ./infra
-      run: |
-        terraform apply -auto-approve -no-color
+      run: terraform apply -auto-approve -no-color
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -37,11 +36,15 @@ jobs:
       run: |
         echo "Extracting Terraform Outputs..."
 
-        # Capture Terraform outputs directly
-        S3_BUCKET=$(terraform output -raw s3_bucket_name)
-        S3_WEBSITE_URL=$(terraform output -raw s3_website_url)
+        # Capture Terraform outputs to temporary files
+        terraform output -raw s3_bucket_name > s3_bucket_output.txt
+        terraform output -raw s3_website_url > s3_website_url_output.txt
 
-        # Ensure outputs are not empty
+        # Read and clean the outputs
+        S3_BUCKET=$(head -n 1 s3_bucket_output.txt)
+        S3_WEBSITE_URL=$(head -n 1 s3_website_url_output.txt)
+
+        # Ensure outputs are not empty and clean
         if [[ -z "$S3_BUCKET" || -z "$S3_WEBSITE_URL" ]]; then
           echo "Error extracting Terraform outputs"
           exit 1
@@ -54,6 +57,9 @@ jobs:
         # Debug outputs
         echo "S3_BUCKET=$S3_BUCKET"
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL"
+
+        # Clean up temporary files
+        rm s3_bucket_output.txt s3_website_url_output.txt
       shell: bash
 
     - name: Deploy to S3
