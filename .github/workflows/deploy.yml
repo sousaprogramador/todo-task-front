@@ -39,10 +39,6 @@ jobs:
         S3_WEBSITE_URL=$(terraform output -raw s3_website_url | tr -d '\n\r')
         echo "Raw S3_BUCKET Output: $(terraform output -raw s3_bucket_name)"
         echo "Raw S3_WEBSITE_URL Output: $(terraform output -raw s3_website_url)"
-        if [ -z "$S3_BUCKET" ]; then
-          echo "Erro: Nome do bucket S3 não definido."
-          exit 1
-        fi
         echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
         echo "S3_WEBSITE_URL=$S3_WEBSITE_URL" >> $GITHUB_ENV
         echo "Bucket Name: $S3_BUCKET"
@@ -72,12 +68,12 @@ jobs:
 
     - name: Debug Environment Variables
       run: |
-        echo "S3_BUCKET: $S3_BUCKET"
-        echo "S3_WEBSITE_URL: $S3_WEBSITE_URL"
+        echo "S3_BUCKET: ${{ env.S3_BUCKET }}"
+        echo "S3_WEBSITE_URL: ${{ env.S3_WEBSITE_URL }}"
 
     - name: Deploy to S3
       run: |
-        if [ -z "$S3_BUCKET" ]; then
+        if [ -z "${{ env.S3_BUCKET }}" ]; then
           echo "Erro: Nome do bucket S3 não definido."
           exit 1
         fi
