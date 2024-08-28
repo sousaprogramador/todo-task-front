@@ -52,9 +52,10 @@ export const TaskProvider = ({ children }) => {
 
   const handleSaveTask = async (taskData) => {
     const token = localStorage.getItem('authToken');
+    console.log('handleSaveTask', taskData);
     try {
-      if (taskData._id) {
-        await api.put(`/task/${taskData._id}`, taskData, {
+      if (taskData.id) {
+        await api.put(`/task/${taskData.id}`, taskData, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',

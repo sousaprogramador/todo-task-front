@@ -21,6 +21,12 @@ function Tasks() {
     openModal();
   };
 
+  const handleDeleteClick = (taskId) => {
+    if (window.confirm('Tem certeza que deseja excluir esta tarefa?')) {
+      handleDeleteTask(taskId);
+    }
+  };
+
   return (
     <div className='flex flex-col h-screen'>
       <div className='flex justify-end p-4'>
@@ -43,7 +49,7 @@ function Tasks() {
             <div className='flex-grow p-4 overflow-y-auto'>
               {tasks[colunaId].map((tarefa) => (
                 <div
-                  key={tarefa.id}
+                  key={tarefa._id}
                   className='bg-white p-4 mb-2 rounded shadow-md'
                 >
                   <h3 className='text-sm font-semibold'>{tarefa.title}</h3>
@@ -56,7 +62,7 @@ function Tasks() {
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDeleteTask(tarefa.id)}
+                      onClick={() => handleDeleteClick(tarefa._id)}
                       className='text-red-500 hover:text-red-700'
                     >
                       Excluir

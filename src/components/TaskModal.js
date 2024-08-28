@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useTasks } from '../context/TaskContext';
 
 function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
+  const [id, setId] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('pendente');
 
   useEffect(() => {
     if (editingTask) {
+      setId(editingTask._id || null);
       setTitle(editingTask.title || '');
       setDescription(editingTask.description || '');
       setStatus(editingTask.status || 'pendente');
     } else {
+      setId(null);
       setTitle('');
       setDescription('');
       setStatus('pendente');
@@ -22,6 +25,7 @@ function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
     event.preventDefault();
 
     const taskData = {
+      id,
       title,
       description,
       status,
