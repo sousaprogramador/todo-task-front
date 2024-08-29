@@ -1,21 +1,37 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as Yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
+// Esquema de validação com Yup
+const validationSchema = Yup.object().shape({
+  name: Yup.string().required('Nome é obrigatório'),
+  email: Yup.string().email('Email inválido').required('Email é obrigatório'),
+  password: Yup.string()
+    .min(6, 'A senha deve ter pelo menos 6 caracteres')
+    .required('Senha é obrigatória'),
+});
+
 function Register() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // useForm com validação Yup
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(validationSchema),
+  });
+
+  const onSubmit = async (data) => {
     try {
-      await api.post('/user', { name, email, password });
+      await api.post('/user', data);
       navigate('/');
     } catch (err) {
-      setError('Erro ao registrar, tente novamente.');
+      console.error('Erro ao registrar:', err);
     }
   };
 
@@ -23,35 +39,40 @@ function Register() {
     <div className='min-h-screen flex items-center justify-center bg-gray-100'>
       <div className='bg-white p-8 rounded shadow-md w-full max-w-sm'>
         <h2 className='text-2xl font-bold mb-6 text-gray-900'>Registrar-se</h2>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className='mb-4'>
             <label className='block text-gray-700'>Nome</label>
             <input
               type='text'
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...register('name')}
               className='mt-1 w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500'
             />
+            {errors.name && (
+              <p className='text-red-500'>{errors.name.message}</p>
+            )}
           </div>
           <div className='mb-4'>
             <label className='block text-gray-700'>Email</label>
             <input
               type='email'
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register('email')}
               className='mt-1 w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500'
             />
+            {errors.email && (
+              <p className='text-red-500'>{errors.email.message}</p>
+            )}
           </div>
           <div className='mb-4'>
             <label className='block text-gray-700'>Senha</label>
             <input
               type='password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register('password')}
               className='mt-1 w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500'
             />
+            {errors.password && (
+              <p className='text-red-500'>{errors.password.message}</p>
+            )}
           </div>
-          {error && <p className='text-red-500'>{error}</p>}
           <button
             type='submit'
             className='w-full bg-green-500 text-white p-2 rounded hover:bg-green-600'

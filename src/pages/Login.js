@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -64,6 +64,12 @@ function Login() {
             >
               Login
             </button>
+            <Link
+              to='/register'
+              className='inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800'
+            >
+              Não tem uma conta? Registre-se
+            </Link>
           </div>
         </form>
       </div>
