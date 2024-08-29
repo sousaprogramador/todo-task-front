@@ -28,5 +28,4 @@ Este projeto é um site estático desenvolvido com React e estilizado usando Tai
    npm install
 
    npm start
-´´´
 ```
