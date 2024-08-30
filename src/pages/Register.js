@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
@@ -29,9 +30,11 @@ function Register() {
   const onSubmit = async (data) => {
     try {
       await api.post('/user', data);
+      toast.success('Cadastro realizado com sucesso!');
       navigate('/');
     } catch (err) {
       console.error('Erro ao registrar:', err);
+      toast.error('Erro ao registrar. Tente novamente.');
     }
   };
 

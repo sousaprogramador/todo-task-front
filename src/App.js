@@ -11,19 +11,25 @@ import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
-import Tasks from './pages/Tasks'; // Página de tarefas
+import Tasks from './pages/Tasks';
 import { TaskProvider } from './context/TaskContext';
 import { AuthProvider } from './context/AuthContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function AppLayout({ children }) {
   const location = useLocation();
-  const isLoginPage = location.pathname === '/login';
+  const isAuthPage =
+    location.pathname === '/login' ||
+    location.pathname === '/register' ||
+    location.pathname === '/forgot-password';
 
   return (
     <div className='flex flex-col min-h-screen'>
-      {!isLoginPage && <Header />}
+      {!isAuthPage && <Header />}
       <main className='flex-grow'>{children}</main>
-      {!isLoginPage && <Footer />}
+      {!isAuthPage && <Footer />}
+      <ToastContainer />
     </div>
   );
 }

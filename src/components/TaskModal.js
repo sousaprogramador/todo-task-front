@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import * as Yup from 'yup';
 
 function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
@@ -42,8 +43,14 @@ function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
     try {
       await validationSchema.validate(taskData, { abortEarly: false });
       onSave(taskData);
+      toast.success(
+        editingTask
+          ? 'Tarefa atualizada com sucesso!'
+          : 'Tarefa adicionada com sucesso!'
+      );
       onRequestClose();
     } catch (err) {
+      toast.error(err.message);
       const validationErrors = {};
       err.inner.forEach((error) => {
         validationErrors[error.path] = error.message;

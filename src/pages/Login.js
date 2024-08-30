@@ -4,13 +4,13 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
 
-  // Esquema de validação
   const validationSchema = Yup.object().shape({
     email: Yup.string().email('Email inválido').required('Email é obrigatório'),
     senha: Yup.string().required('Senha é obrigatória'),
@@ -27,9 +27,11 @@ function Login() {
   const onSubmit = async (data) => {
     const isAuthenticated = await login(data.email, data.senha);
     if (isAuthenticated) {
+      toast.success('Login realizado com sucesso!');
       navigate('/');
     } else {
       setError('Credenciais inválidas');
+      toast.error('Erro ao realizar login. Verifique suas credenciais.');
     }
   };
 
