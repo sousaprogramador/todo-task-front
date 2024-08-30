@@ -36,3 +36,7 @@ jobs:
           echo "Using S3_WEBSITE_URL: $S3_WEBSITE_URL"
           aws s3 sync ./build s3://$S3_BUCKET --delete
           aws s3 website s3://$S3_BUCKET --index-document index.html --error-document error.html
+
+      - name: Verify S3 Website
+        run: |
+          curl -I $S3_WEBSITE_URL

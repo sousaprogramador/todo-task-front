@@ -1,22 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 import api from '../services/api';
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = sessionStorage.getItem('authToken');
-    if (token) {
-      api.defaults.headers.Authorization = `Bearer ${token}`;
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
-  }, []);
+  const [user, setUser] = useState(null);
 
   const login = async (email, senha) => {
     try {
@@ -25,9 +16,13 @@ export const AuthProvider = ({ children }) => {
         password: senha,
       });
       const token = response.data.token;
+      const userData = response.data.user;
 
       sessionStorage.setItem('authToken', token);
+      sessionStorage.setItem('user', JSON.stringify(userData));
       api.defaults.headers.Authorization = `Bearer ${token}`;
+
+      setUser(userData);
       setIsAuthenticated(true);
 
       return true;
@@ -39,16 +34,14 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     sessionStorage.removeItem('authToken');
-    api.defaults.headers.Authorization = undefined;
+    sessionStorage.removeItem('user');
+    api.defaults.headers.Authorization = null;
     setIsAuthenticated(false);
+    setUser(null);
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

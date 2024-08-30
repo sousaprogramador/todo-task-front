@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import * as Yup from 'yup';
 
 function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
   const [id, setId] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('pendente');
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (editingTask) {
@@ -18,9 +20,16 @@ function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
       setDescription('');
       setStatus('pendente');
     }
+    setErrors({});
   }, [editingTask]);
 
-  const handleSubmit = (event) => {
+  const validationSchema = Yup.object().shape({
+    title: Yup.string().required('O título é obrigatório'),
+    description: Yup.string(),
+    status: Yup.string().required('O status é obrigatório'),
+  });
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const taskData = {
@@ -30,8 +39,17 @@ function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
       status,
     };
 
-    onSave(taskData);
-    onRequestClose();
+    try {
+      await validationSchema.validate(taskData, { abortEarly: false });
+      onSave(taskData);
+      onRequestClose();
+    } catch (err) {
+      const validationErrors = {};
+      err.inner.forEach((error) => {
+        validationErrors[error.path] = error.message;
+      });
+      setErrors(validationErrors);
+    }
   };
 
   return (
@@ -56,8 +74,13 @@ function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder='Título da tarefa'
                 required
-                className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500'
+                className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.title ? 'border-red-500' : ''
+                }`}
               />
+              {errors.title && (
+                <p className='text-red-500 text-xs italic'>{errors.title}</p>
+              )}
             </div>
             <div className='mb-4'>
               <label
@@ -85,13 +108,18 @@ function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
                 id='status'
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500'
+                className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.status ? 'border-red-500' : ''
+                }`}
               >
                 <option value='pendente'>Pendente</option>
                 <option value='emProgresso'>Em Progresso</option>
                 <option value='concluido'>Concluído</option>
                 <option value='cancelado'>Cancelado</option>
               </select>
+              {errors.status && (
+                <p className='text-red-500 text-xs italic'>{errors.status}</p>
+              )}
             </div>
             <div className='flex justify-end'>
               <button
