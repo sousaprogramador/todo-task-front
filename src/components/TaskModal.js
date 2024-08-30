@@ -11,7 +11,7 @@ function TaskModal({ isOpen, onRequestClose, editingTask, onSave }) {
 
   useEffect(() => {
     if (editingTask) {
-      setId(editingTask._id || null);
+      setId(editingTask.id || null);
       setTitle(editingTask.title || '');
       setDescription(editingTask.description || '');
       setStatus(editingTask.status || 'pendente');

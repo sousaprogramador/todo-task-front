@@ -49,7 +49,7 @@ function Tasks() {
             <div className='flex-grow p-4 overflow-y-auto'>
               {tasks[colunaId].map((tarefa) => (
                 <div
-                  key={tarefa._id}
+                  key={tarefa.id}
                   className='bg-white p-4 mb-2 rounded shadow-md'
                 >
                   <h3 className='text-sm font-semibold'>{tarefa.title}</h3>
@@ -62,7 +62,7 @@ function Tasks() {
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDeleteClick(tarefa._id)}
+                      onClick={() => handleDeleteClick(tarefa.id)}
                       className='text-red-500 hover:text-red-700'
                     >
                       Excluir
