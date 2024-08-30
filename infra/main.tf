@@ -1,30 +1,34 @@
+variable "bucket_name" {
+  description = "Nome do bucket S3"
+  default     = "todo-site-sousa-dev"
+}
+
+variable "create_new_bucket" {
+  description = "Indica se deve criar um novo bucket"
+  type        = bool
+  default     = true
+}
+
+variable "region" {
+  description = "Região AWS onde o bucket será criado"
+  default     = "sa-east-1"
+}
+
 provider "aws" {
-  region = "sa-east-1"
+  region = var.region
 }
 
-# Dados do bucket existente
-data "aws_s3_bucket" "existing_bucket" {
-  bucket = "todo-site-sousa-dev"
-}
-
-# Condição para verificar a existência do bucket
-locals {
-  create_bucket = data.aws_s3_bucket.existing_bucket.id == "" ? true : false
-}
-
-# Recurso do bucket S3
 resource "aws_s3_bucket" "static_site" {
-  count  = local.create_bucket ? 1 : 0
-  bucket = "todo-site-sousa-dev-unique"
+  count  = var.create_new_bucket ? 1 : 0
+  bucket = var.bucket_name
 
   lifecycle {
     prevent_destroy = true
   }
 }
 
-# Configuração do website para o bucket S3
 resource "aws_s3_bucket_website_configuration" "static_site" {
-  count  = local.create_bucket ? 1 : 0
+  count  = var.create_new_bucket ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
 
   index_document {
@@ -36,9 +40,8 @@ resource "aws_s3_bucket_website_configuration" "static_site" {
   }
 }
 
-# Bloqueio de acesso público para o bucket S3
 resource "aws_s3_bucket_public_access_block" "static_site_public_access" {
-  count  = local.create_bucket ? 1 : 0
+  count  = var.create_new_bucket ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
 
   block_public_acls       = false
@@ -47,9 +50,8 @@ resource "aws_s3_bucket_public_access_block" "static_site_public_access" {
   restrict_public_buckets = false
 }
 
-# Controles de propriedade para o bucket S3
 resource "aws_s3_bucket_ownership_controls" "static_site_ownership" {
-  count  = local.create_bucket ? 1 : 0
+  count  = var.create_new_bucket ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
 
   rule {
@@ -57,9 +59,8 @@ resource "aws_s3_bucket_ownership_controls" "static_site_ownership" {
   }
 }
 
-# Política para o bucket S3
 resource "aws_s3_bucket_policy" "static_site_policy" {
-  count  = local.create_bucket ? 1 : 0
+  count  = var.create_new_bucket ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
   policy = jsonencode({
     Version = "2012-10-17",
@@ -75,9 +76,8 @@ resource "aws_s3_bucket_policy" "static_site_policy" {
   depends_on = [aws_s3_bucket_public_access_block.static_site_public_access]
 }
 
-# Versionamento para o bucket S3
 resource "aws_s3_bucket_versioning" "static_site_versioning" {
-  count  = local.create_bucket ? 1 : 0
+  count  = var.create_new_bucket ? 1 : 0
   bucket = aws_s3_bucket.static_site[0].bucket
 
   versioning_configuration {
@@ -85,11 +85,10 @@ resource "aws_s3_bucket_versioning" "static_site_versioning" {
   }
 }
 
-# Outputs
 output "s3_bucket_name" {
-  value = local.create_bucket ? aws_s3_bucket.static_site[0].bucket : data.aws_s3_bucket.existing_bucket.bucket
+  value = var.create_new_bucket ? aws_s3_bucket.static_site[0].bucket : var.bucket_name
 }
 
 output "s3_website_url" {
-  value = local.create_bucket ? aws_s3_bucket_website_configuration.static_site[0].website_endpoint : data.aws_s3_bucket.existing_bucket.website_endpoint
+  value = var.create_new_bucket ? aws_s3_bucket_website_configuration.static_site[0].website_endpoint : "https://${var.bucket_name}.s3-website-${var.region}.amazonaws.com"
 }
