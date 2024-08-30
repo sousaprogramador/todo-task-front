@@ -25,8 +25,8 @@ Este projeto é um site estático desenvolvido com React e estilizado usando Tai
 
 - **Instalação de Dependências**
 
-```git clone https://github.com/seu-usuario/meu-site-estatico.git
-   cd meu-site-estatico
+```git clone git@github.com:sousaprogramador/todo-task-front.git
+   cd todo-task-front
    npm install
 
    npm start
