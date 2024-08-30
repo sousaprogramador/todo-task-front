@@ -22,7 +22,7 @@ export const TaskProvider = ({ children }) => {
   }, [isAuthenticated]);
 
   const fetchTasks = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('accessToken');
 
     try {
       const response = await api.get('/task', {
@@ -51,8 +51,7 @@ export const TaskProvider = ({ children }) => {
   };
 
   const handleSaveTask = async (taskData) => {
-    const token = localStorage.getItem('authToken');
-    console.log('handleSaveTask', taskData);
+    const token = sessionStorage.getItem('accessToken');
     try {
       if (taskData.id) {
         await api.put(`/task/${taskData.id}`, taskData, {
@@ -82,7 +81,7 @@ export const TaskProvider = ({ children }) => {
   };
 
   const handleDeleteTask = async (taskId) => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('accessToken');
     try {
       await api.delete(`/task/${taskId}`, {
         headers: {

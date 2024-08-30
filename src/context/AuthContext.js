@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext();
@@ -9,22 +9,28 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
 
-  const login = async (email, senha) => {
-    try {
-      const response = await api.post('/auth/login', {
-        email,
-        password: senha,
-      });
-      const token = response.data.token;
-      const userData = response.data.user;
+  useEffect(() => {
+    const token = sessionStorage.getItem('accessToken');
+    const savedUser = sessionStorage.getItem('user');
 
-      sessionStorage.setItem('authToken', token);
-      sessionStorage.setItem('user', JSON.stringify(userData));
-      api.defaults.headers.Authorization = `Bearer ${token}`;
-
-      setUser(userData);
+    if (token) {
       setIsAuthenticated(true);
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
 
+  const login = async (email, password) => {
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const token = response.data.accessToken;
+      const user = response.data.user;
+
+      sessionStorage.setItem('accessToken', token);
+      sessionStorage.setItem('user', JSON.stringify(user));
+      setIsAuthenticated(true);
+      setUser(user);
+
+      api.defaults.headers.Authorization = `Bearer ${token}`;
       return true;
     } catch (error) {
       console.error('Erro ao fazer login:', error);
@@ -33,9 +39,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('user');
-    api.defaults.headers.Authorization = null;
     setIsAuthenticated(false);
     setUser(null);
   };
