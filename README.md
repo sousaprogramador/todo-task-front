@@ -1,5 +1,7 @@
 # Projeto: Meu Site Estático com React e Tailwind CSS
 
+![Visão Geral do Projeto](./img/overview.png)
+
 ## Descrição
 
 Este projeto é um site estático desenvolvido com React e estilizado usando Tailwind CSS. O deploy do site é automatizado através de uma pipeline CI/CD configurada com GitHub Actions, e a infraestrutura é provisionada na AWS utilizando Terraform. O site está hospedado em um bucket S3 configurado como um site estático.
