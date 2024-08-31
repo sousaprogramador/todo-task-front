@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-// Esquema de validação com Yup
 const validationSchema = Yup.object().shape({
   name: Yup.string().required('Nome é obrigatório'),
   email: Yup.string().email('Email inválido').required('Email é obrigatório'),
@@ -18,7 +17,6 @@ const validationSchema = Yup.object().shape({
 function Register() {
   const navigate = useNavigate();
 
-  // useForm com validação Yup
   const {
     register,
     handleSubmit,
@@ -29,12 +27,14 @@ function Register() {
 
   const onSubmit = async (data) => {
     try {
-      await api.post('/user', data);
+      await api.post('/auth/register', data);
       toast.success('Cadastro realizado com sucesso!');
-      navigate('/');
+      navigate('/login');
     } catch (err) {
-      console.error('Erro ao registrar:', err);
-      toast.error('Erro ao registrar. Tente novamente.');
+      const errorMessage =
+        err.response?.data?.message?.message ||
+        'Erro ao registrar. Tente novamente.';
+      toast.error(errorMessage);
     }
   };
 
@@ -84,7 +84,7 @@ function Register() {
           </button>
         </form>
         <div className='mt-4 text-center'>
-          <a href='/' className='text-blue-500 hover:underline'>
+          <a href='/login' className='text-blue-500 hover:underline'>
             Voltar para Login
           </a>
         </div>
